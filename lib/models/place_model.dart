@@ -1,0 +1,61 @@
+class PlaceModel {
+  final int id;
+  final int categoryId;
+  final String name;
+  final String address;
+  final double latitude;
+  final double longitude;
+  final String? openHour;
+  final String? description;
+  final String? photoUrl;
+  final double? rating;
+  final String? phone;
+  final String? website;
+
+  PlaceModel({
+    required this.id,
+    required this.categoryId,
+    required this.name,
+    required this.address,
+    required this.latitude,
+    required this.longitude,
+    this.openHour,
+    this.description,
+    this.photoUrl,
+    this.rating,
+    this.phone,
+    this.website,
+  });
+
+  factory PlaceModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    try {
+      return PlaceModel(
+        id: json['id'],
+        categoryId: json['category_id'],
+        name: json['name'] ?? '',
+        address: json['address'] ?? '',
+        latitude:
+            (json['latitude'] as num)
+                .toDouble(),
+        longitude:
+            (json['longitude'] as num)
+                .toDouble(),
+        openHour: json['open_hour'],
+        description: json['description'],
+        photoUrl: json['photo_url'],
+        rating: json['rating'] != null
+            ? (json['rating'] as num)
+                .toDouble()
+            : null,
+        phone: json['phone'],
+        website: json['website'],
+      );
+    } catch (e) {
+      throw Exception(
+        'Error parsing PlaceModel: $e',
+      );
+    }
+  }
+}
