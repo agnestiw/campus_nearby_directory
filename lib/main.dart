@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/supabase_config.dart';
-import 'screens/home_screen.dart';
+import 'navigation/main_navigation.dart';
 
 import 'core/app_logger.dart';
 
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomeScreen(),
+      home: const MainNavigation(),
     );
   }
 }
