@@ -1,93 +1,109 @@
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
 import '../core/app_logger.dart';
 
-class RoutingService {
-  // ─────────────────────────────────────
-  // BUKA RUTE KE TEMPAT TUJUAN
-  // Menggunakan koordinat dari database
-  // ─────────────────────────────────────
-  static Future<bool> openRoute({
-    required double destLat,
-    required double destLng,
-    String? destName,
+class RouteResult {
+  /// Daftar titik koordinat polyline jalan sungguhan
+  final List<LatLng> points;
+
+  /// Total jarak dalam meter
+  final double distanceMeters;
+
+  /// Estimasi waktu jalan kaki dalam detik
+  final double durationSeconds;
+
+  RouteResult({
+    required this.points,
+    required this.distanceMeters,
+    required this.durationSeconds,
+  });
+
+  String get formattedDistance {
+    if (distanceMeters < 1000) {
+      return '${distanceMeters.round()} m';
+    }
+    return '${(distanceMeters / 1000).toStringAsFixed(1)} km';
+  }
+
+  String get formattedDuration {
+    final minutes = (durationSeconds / 60).round();
+    if (minutes < 60) return '$minutes menit';
+    final hours = minutes ~/ 60;
+    final remaining = minutes % 60;
+    return '$hours jam $remaining menit';
+  }
+}
+
+class OsrmRoutingService {
+  // OSRM public API — gratis, tidak butuh API key
+  // Menggunakan profil "foot" (jalan kaki) karena di sekitar kampus
+  static const String _baseUrl = 'https://router.project-osrm.org/route/v1';
+  static const String _profile = 'foot'; // foot | driving | cycling
+
+  /// Ambil rute dari titik asal ke tujuan via OSRM
+  static Future<RouteResult?> getRoute({
+    required LatLng origin,
+    required LatLng destination,
   }) async {
-    // Google Maps URL scheme — akan membuka aplikasi Google Maps
-    // jika terinstall, atau browser jika tidak
-    final encodedName = Uri.encodeComponent(destName ?? 'Tujuan');
-
-    final googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1'
-      '&destination=$destLat,$destLng'
-      '&destination_place_name=$encodedName'
-      '&travelmode=walking',
-    );
-
-    // Fallback: geo URI (universal, semua navigation app)
-    final geoUri = Uri.parse(
-      'geo:$destLat,$destLng?q=$destLat,$destLng($encodedName)',
-    );
-
     try {
-      // Coba buka Google Maps dulu
-      if (await canLaunchUrl(googleMapsUrl)) {
-        await launchUrl(
-          googleMapsUrl,
-          mode: LaunchMode.externalApplication,
+      // Format: longitude,latitude (OSRM pakai lon,lat — bukan lat,lon!)
+      final originStr = '${origin.longitude},${origin.latitude}';
+      final destStr = '${destination.longitude},${destination.latitude}';
+
+      final uri = Uri.parse(
+        '$_baseUrl/$_profile/$originStr;$destStr'
+        '?overview=full&geometries=geojson&steps=false',
+      );
+
+      AppLogger.info('OSRM request: $uri');
+
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 15),
+      );
+
+      if (response.statusCode != 200) {
+        AppLogger.error('OSRM error: ${response.statusCode}');
+        return null;
+      }
+
+      final data = jsonDecode(response.body);
+
+      if (data['code'] != 'Ok' || data['routes'] == null || (data['routes'] as List).isEmpty) {
+        AppLogger.error('OSRM no route found');
+        return null;
+      }
+
+      final route = data['routes'][0];
+      final geometry = route['geometry'];
+      final distanceMeters = (route['distance'] as num).toDouble();
+      final durationSeconds = (route['duration'] as num).toDouble();
+
+      // Decode GeoJSON coordinates array → List<LatLng>
+      final coordinates = geometry['coordinates'] as List;
+      final points = coordinates.map((coord) {
+        // GeoJSON: [longitude, latitude]
+        return LatLng(
+          (coord[1] as num).toDouble(),
+          (coord[0] as num).toDouble(),
         );
-        AppLogger.success('Opened Google Maps for routing');
-        return true;
-      }
+      }).toList();
 
-      // Fallback ke geo URI
-      if (await canLaunchUrl(geoUri)) {
-        await launchUrl(
-          geoUri,
-          mode: LaunchMode.externalApplication,
-        );
-        AppLogger.success('Opened geo URI for routing');
-        return true;
-      }
+      AppLogger.success(
+        'Route: ${points.length} pts, '
+        '${(distanceMeters / 1000).toStringAsFixed(2)} km, '
+        '${(durationSeconds / 60).round()} min',
+      );
 
-      AppLogger.error('Cannot launch any map app');
-      return false;
+      return RouteResult(
+        points: points,
+        distanceMeters: distanceMeters,
+        durationSeconds: durationSeconds,
+      );
     } catch (e) {
-      AppLogger.error('Routing error: $e');
-      return false;
-    }
-  }
-
-  // ─────────────────────────────────────
-  // BUKA WEBSITE TEMPAT
-  // ─────────────────────────────────────
-  static Future<bool> openWebsite(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      AppLogger.error('Open website error: $e');
-      return false;
-    }
-  }
-
-  // ─────────────────────────────────────
-  // BUKA APLIKASI TELEPON
-  // ─────────────────────────────────────
-  static Future<bool> openPhone(String phone) async {
-    try {
-      final uri = Uri.parse('tel:$phone');
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      AppLogger.error('Open phone error: $e');
-      return false;
+      AppLogger.error('OSRM exception: $e');
+      return null;
     }
   }
 }

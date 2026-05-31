@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/supabase_config.dart';
-import 'navigation/main_navigation.dart';
-
+import 'core/app_theme.dart';
 import 'core/app_logger.dart';
+import 'models/place_model.dart';
+import 'navigation/main_navigation.dart';
+import 'screens/map_route_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +16,8 @@ void main() async {
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
-  FlutterError.onError = (
-    FlutterErrorDetails details,
-  ) {
-    AppLogger.error(
-      details.exceptionAsString(),
-    );
+  FlutterError.onError = (FlutterErrorDetails details) {
+    AppLogger.error(details.exceptionAsString());
   };
 
   runApp(const MyApp());
@@ -33,10 +31,18 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Campus Nearby Directory',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: AppTheme.lightTheme,
       home: const MainNavigation(),
+      // Named route untuk MapRouteScreen (dipanggil dari PlaceDetailScreen)
+      onGenerateRoute: (settings) {
+        if (settings.name == '/map-route') {
+          final place = settings.arguments as PlaceModel;
+          return MaterialPageRoute(
+            builder: (_) => MapRouteScreen(destination: place),
+          );
+        }
+        return null;
+      },
     );
   }
 }
