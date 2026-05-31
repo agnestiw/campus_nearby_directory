@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../screens/home_screen.dart';
 import '../screens/map_screen.dart';
@@ -50,11 +51,11 @@ class _MainNavigationState extends State<MainNavigation> {
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFF1A6FDB),
           unselectedItemColor: const Color(0xFF9CA3AF),
-          selectedLabelStyle: const TextStyle(
+          selectedLabelStyle: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 11,
           ),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
+          unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
           elevation: 0,
           items: const [
             BottomNavigationBarItem(

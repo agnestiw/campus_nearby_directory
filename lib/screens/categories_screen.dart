@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../core/app_theme.dart';
 import '../models/category_model.dart';
@@ -94,11 +95,25 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text('Kategori'),
+        title: Text(
+          _selectedCategory != null 
+              ? '${_selectedCategory!.name[0].toUpperCase()}${_selectedCategory!.name.substring(1)}'
+              : 'Kategori',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1A1A2E),
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        surfaceTintColor: Colors.transparent,
         leading: _selectedCategory != null
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A2E)),
                 onPressed: () => setState(() {
                   _selectedCategory = null;
                   _categoryPlaces = [];
@@ -121,25 +136,35 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   Widget _buildCategoryGrid() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Pilih kategori untuk melihat tempat',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7280),
+          Text(
+            'Eksplorasi Kategori',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1A1A2E),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
+          Text(
+            'Temukan tempat terbaik di sekitar kampusmu',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: const Color(0xFF9CA3AF),
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 28),
           Expanded(
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.3,
+                crossAxisSpacing: 18,
+                mainAxisSpacing: 18,
+                childAspectRatio: 0.9,
               ),
               itemCount: _categories.length,
               itemBuilder: (context, index) {
@@ -151,34 +176,58 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   onTap: () => _selectCategory(cat),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: color.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(icon, color: Colors.white, size: 26),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withOpacity(0.08),
+                          blurRadius: 30,
+                          offset: const Offset(0, 12),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          cat.name[0].toUpperCase() + cat.name.substring(1),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: color,
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        // Decorative elegant abstract shape on top right
+                        Positioned(
+                          top: -20,
+                          right: -20,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: color.withOpacity(0.05),
+                            ),
                           ),
-                          textAlign: TextAlign.center,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: Icon(icon, color: color, size: 28),
+                              ),
+                              Text(
+                                cat.name[0].toUpperCase() + cat.name.substring(1),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1A1A2E),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -205,15 +254,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
           child: Text(
             '${_categoryPlaces.length} tempat ditemukan',
-            style: const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+            style: GoogleFonts.poppins(
+              fontSize: 14, 
+              color: const Color(0xFF9CA3AF),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
             itemCount: _categoryPlaces.length,
             itemBuilder: (context, index) {
               final place = _categoryPlaces[index];

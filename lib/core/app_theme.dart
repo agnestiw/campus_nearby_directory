@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand colors
@@ -40,17 +41,18 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      textTheme: GoogleFonts.poppinsTextTheme(),
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         brightness: Brightness.light,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
-        foregroundColor: Color(0xFF1A1A2E),
+        foregroundColor: const Color(0xFF1A1A2E),
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
-          color: Color(0xFF1A1A2E),
+        titleTextStyle: GoogleFonts.poppins(
+          color: const Color(0xFF1A1A2E),
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),
@@ -86,8 +88,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(
-          color: Color(0xFF9CA3AF),
+        hintStyle: GoogleFonts.poppins(
+          color: const Color(0xFF9CA3AF),
           fontSize: 14,
         ),
       ),
