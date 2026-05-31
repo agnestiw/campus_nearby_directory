@@ -5,12 +5,15 @@ class PlaceModel {
   final String address;
   final double latitude;
   final double longitude;
-  final String? openHour;
+  String? openHour;
   final String? description;
   final String? photoUrl;
   final double? rating;
   final String? phone;
   final String? website;
+
+  // mutable favorite flag (local only)
+  bool isFavorite;
 
   PlaceModel({
     required this.id,
@@ -25,6 +28,7 @@ class PlaceModel {
     this.rating,
     this.phone,
     this.website,
+    this.isFavorite = false,
   });
 
   factory PlaceModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +48,7 @@ class PlaceModel {
             : null,
         phone: json['phone'],
         website: json['website'],
+        isFavorite: false,
       );
     } catch (e) {
       throw Exception('Error parsing PlaceModel: $e');

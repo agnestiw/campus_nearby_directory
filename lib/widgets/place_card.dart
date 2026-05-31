@@ -9,12 +9,16 @@ class PlaceCard extends StatelessWidget {
   final PlaceModel place;
   final String? categoryName;
   final String? distanceText;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
   const PlaceCard({
     super.key,
     required this.place,
     this.categoryName,
     this.distanceText,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -119,6 +123,32 @@ class PlaceCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                  // Favorite button
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        onFavoriteToggle?.call();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6),
+                          ],
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          size: 18,
+                          color: isFavorite ? const Color(0xFFEF4444) : Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

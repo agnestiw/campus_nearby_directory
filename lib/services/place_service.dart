@@ -2,9 +2,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/app_logger.dart';
 import '../models/place_model.dart';
+import 'favorites_service.dart';
 
 class PlaceService {
   final supabase = Supabase.instance.client;
+  final FavoritesService _favService = FavoritesService();
 
   // ─────────────────────────────────────
   // GET ALL PLACES
@@ -20,9 +22,17 @@ class PlaceService {
 
       AppLogger.success('Places fetched: ${response.length}');
 
-      return (response as List)
+      final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
+
+      // mark favorites
+      final favs = await _favService.getFavorites();
+      for (var p in places) {
+        p.isFavorite = favs.contains(p.id);
+      }
+
+      return places;
     } catch (e) {
       AppLogger.error('Error fetching places: $e');
       rethrow;
@@ -42,7 +52,9 @@ class PlaceService {
           .eq('id', id)
           .single();
 
-      return PlaceModel.fromJson(response);
+      final place = PlaceModel.fromJson(response);
+      place.isFavorite = await _favService.isFavorite(place.id);
+      return place;
     } catch (e) {
       AppLogger.error('Error fetching place by id: $e');
       return null;
@@ -64,9 +76,12 @@ class PlaceService {
 
       AppLogger.success('Category places fetched: ${response.length}');
 
-      return (response as List)
+      final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
+      final favs = await _favService.getFavorites();
+      for (var p in places) p.isFavorite = favs.contains(p.id);
+      return places;
     } catch (e) {
       AppLogger.error('Error fetching category places: $e');
       rethrow;
@@ -88,9 +103,12 @@ class PlaceService {
 
       AppLogger.success('Search result: ${response.length} places');
 
-      return (response as List)
+      final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
+      final favs = await _favService.getFavorites();
+      for (var p in places) p.isFavorite = favs.contains(p.id);
+      return places;
     } catch (e) {
       AppLogger.error('Search error: $e');
       rethrow;

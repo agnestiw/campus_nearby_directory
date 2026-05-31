@@ -6,6 +6,7 @@ import '../models/category_model.dart';
 import '../models/place_model.dart';
 import '../services/category_service.dart';
 import '../services/place_service.dart';
+import '../services/favorites_service.dart';
 import '../utils/distance_helper.dart';
 import '../widgets/error_state_widget.dart';
 import '../widgets/place_card.dart';
@@ -23,6 +24,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   final CategoryService _categoryService = CategoryService();
   final PlaceService _placeService = PlaceService();
   final LocationService _locationService = LocationService();
+  final FavoritesService _favService = FavoritesService();
 
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
@@ -37,8 +39,25 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
+    _favService.favorites.addListener(_onFavoritesChanged);
     _loadCategories();
     _loadLocation();
+  }
+
+  @override
+  void dispose() {
+    _favService.favorites.removeListener(_onFavoritesChanged);
+    super.dispose();
+  }
+
+  void _onFavoritesChanged() {
+    if (!mounted) return;
+    final favIds = _favService.favorites.value;
+    setState(() {
+      for (final place in _categoryPlaces) {
+        place.isFavorite = favIds.contains(place.id);
+      }
+    });
   }
 
   Future<void> _loadCategories() async {
@@ -257,6 +276,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 place: place,
                 categoryName: _selectedCategory?.name,
                 distanceText: _getDistance(place),
+                isFavorite: place.isFavorite,
+                onFavoriteToggle: () async {
+                  await _favService.toggleFavorite(place.id);
+                },
               );
             },
           ),
