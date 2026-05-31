@@ -141,23 +141,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Eksplorasi Kategori',
+            'Pilih kategori tempat yang ingin kamu jelajahi',
             style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF1A1A2E),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Temukan tempat terbaik di sekitar kampusmu',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: const Color(0xFF9CA3AF),
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           Expanded(
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -176,15 +167,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   onTap: () => _selectCategory(cat),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withOpacity(0.08),
-                          blurRadius: 30,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
+                      color: color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(32),
                     ),
                     child: Stack(
                       children: [
@@ -197,7 +181,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             height: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: color.withOpacity(0.05),
+                              color: color.withOpacity(0.08),
                             ),
                           ),
                         ),
@@ -208,11 +192,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                width: 56,
-                                height: 56,
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(18),
+                                  color: Colors.white.withOpacity(0.6),
+                                  shape: BoxShape.circle,
                                 ),
                                 child: Icon(icon, color: color, size: 28),
                               ),

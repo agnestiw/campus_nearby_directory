@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,7 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Profil'),
+          title: Text('Edit Profil', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -37,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
+              child: Text('Batal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -47,7 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 });
                 Navigator.pop(context);
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
             ),
           ],
         );
@@ -59,12 +60,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pengaturan'),
-        content: const Text('Ini adalah halaman pengaturan (Dummy). Fitur ini belum terhubung dengan backend.'),
+        title: Text('Pengaturan', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        content: Text('Ini adalah halaman pengaturan (Dummy). Fitur ini belum terhubung dengan backend.', style: GoogleFonts.poppins()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+            child: Text('Tutup', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -75,12 +76,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pusat Bantuan'),
-        content: const Text('Silakan hubungi admin@kampus.edu untuk bantuan lebih lanjut mengenai aplikasi ini.'),
+        title: Text('Pusat Bantuan', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        content: Text('Silakan hubungi admin@kampus.edu untuk bantuan lebih lanjut mengenai aplikasi ini.', style: GoogleFonts.poppins()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+            child: Text('Tutup', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -89,9 +90,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _handleLogout() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Anda telah keluar dari akun (Dummy).'),
-        backgroundColor: Color(0xFFEF4444),
+      SnackBar(
+        content: Text('Anda telah keluar dari akun (Dummy).', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -100,13 +101,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Profile',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A2E),
+            color: const Color(0xFF1A1A2E),
             fontSize: 18,
           ),
         ),
@@ -116,195 +117,208 @@ class _ProfileScreenState extends State<ProfileScreen> {
         surfaceTintColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Profile Image / Avatar
-            Center(
-              child: Stack(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A6FDB).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF1A6FDB),
-                        width: 2,
-                      ),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/profile.jpg'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: _showEditProfileDialog,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1A6FDB),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.edit_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Name and Email
-            Text(
-              _name,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1A1A2E),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _email,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 32),
-
-            // Profile Options Menu
+            // Vibrant Profile Header
             Container(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: const Color(0xFFE8F1FC), // Pastel Blue
+                borderRadius: BorderRadius.circular(36),
               ),
               child: Column(
                 children: [
-                  _buildProfileMenuItem(
-                    icon: Icons.person_outline_rounded,
-                    title: 'Edit Profil',
-                    color: const Color(0xFF1A6FDB),
-                    onTap: _showEditProfileDialog,
+                  Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1A6FDB).withOpacity(0.15),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/profile.jpg'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: _showEditProfileDialog,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A1A2E),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                            ),
+                            child: const Icon(
+                              Icons.edit_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                  _buildProfileMenuItem(
-                    icon: Icons.settings_outlined,
-                    title: 'Pengaturan',
-                    color: const Color(0xFF8B5CF6),
-                    onTap: _showDummySettingsDialog,
+                  const SizedBox(height: 24),
+                  Text(
+                    _name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1A1A2E),
+                      height: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                  _buildProfileMenuItem(
-                    icon: Icons.help_outline_rounded,
-                    title: 'Pusat Bantuan',
-                    color: const Color(0xFFF59E0B),
-                    onTap: _showDummyHelpDialog,
+                  const SizedBox(height: 6),
+                  Text(
+                    _email,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      color: const Color(0xFF6B7280),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
 
-            // Logout Button
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            // Bento Grid for Options
+            Row(
+              children: [
+                Expanded(
+                  child: _buildBentoCard(
+                    title: 'Edit Profil',
+                    subtitle: 'Ubah Data',
+                    icon: Icons.person_outline_rounded,
+                    backgroundColor: const Color(0xFFFFE5E5), // Pastel Pink/Red
+                    iconColor: const Color(0xFFE85D5D),
+                    onTap: _showEditProfileDialog,
                   ),
-                ],
-              ),
-              child: _buildProfileMenuItem(
-                icon: Icons.logout_rounded,
-                title: 'Keluar',
-                color: const Color(0xFFEF4444),
-                isLogout: true,
-                onTap: _handleLogout,
-              ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildBentoCard(
+                    title: 'Pengaturan',
+                    subtitle: 'App & Privasi',
+                    icon: Icons.settings_outlined,
+                    backgroundColor: const Color(0xFFEAE5FF), // Pastel Purple
+                    iconColor: const Color(0xFF7A5DC8),
+                    onTap: _showDummySettingsDialog,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildBentoCard(
+                    title: 'Bantuan',
+                    subtitle: 'FAQ & CS',
+                    icon: Icons.help_outline_rounded,
+                    backgroundColor: const Color(0xFFFFF4D4), // Pastel Yellow
+                    iconColor: const Color(0xFFD49900),
+                    onTap: _showDummyHelpDialog,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildBentoCard(
+                    title: 'Keluar',
+                    subtitle: 'Akhiri Sesi',
+                    icon: Icons.logout_rounded,
+                    backgroundColor: const Color(0xFFE5F8ED), // Pastel Green
+                    iconColor: const Color(0xFF34A853),
+                    onTap: _handleLogout,
+                  ),
+                ),
+              ],
             ),
             
-            const SizedBox(height: 32),
-            const Text(
+            const SizedBox(height: 40),
+            Text(
               'Versi Aplikasi 1.0.0',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF9CA3AF),
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: const Color(0xFF9CA3AF),
+                fontWeight: FontWeight.w500,
               ),
+              textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileMenuItem({
-    required IconData icon,
+  Widget _buildBentoCard({
     required String title,
-    required Color color,
+    required String subtitle,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color iconColor,
     required VoidCallback onTap,
-    bool isLogout = false,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 20),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(32),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.6),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: isLogout ? color : const Color(0xFF1A1A2E),
-                  ),
-                ),
+              child: Icon(icon, color: iconColor, size: 28),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1A2E),
+                height: 1.2,
               ),
-              if (!isLogout)
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFF9CA3AF),
-                  size: 20,
-                ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF1A1A2E).withOpacity(0.5),
+              ),
+            ),
+          ],
         ),
       ),
     );
