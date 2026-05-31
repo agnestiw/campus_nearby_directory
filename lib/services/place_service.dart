@@ -6,151 +6,117 @@ import '../models/place_model.dart';
 class PlaceService {
   final supabase = Supabase.instance.client;
 
-  /// ==========================
-  /// GET ALL PLACES
-  /// ==========================
+  // ─────────────────────────────────────
+  // GET ALL PLACES
+  // ─────────────────────────────────────
   Future<List<PlaceModel>> getPlaces() async {
     try {
-      AppLogger.info(
-        'Fetching all places...',
-      );
+      AppLogger.info('Fetching all places...');
 
       final response = await supabase
           .from('places')
           .select()
           .order('name');
 
-      AppLogger.success(
-        'Places fetched successfully',
-      );
-
-      AppLogger.info(
-        'Total places: ${response.length}',
-      );
+      AppLogger.success('Places fetched: ${response.length}');
 
       return (response as List)
-          .map(
-            (e) => PlaceModel.fromJson(e),
-          )
+          .map((e) => PlaceModel.fromJson(e))
           .toList();
     } catch (e) {
-      AppLogger.error(
-        'Error fetching places: $e',
-      );
-
+      AppLogger.error('Error fetching places: $e');
       rethrow;
     }
   }
 
-  /// ==========================
-  /// GET PLACE BY ID
-  /// ==========================
-  Future<PlaceModel?> getPlaceById(
-    int id,
-  ) async {
+  // ─────────────────────────────────────
+  // GET PLACE BY ID
+  // ─────────────────────────────────────
+  Future<PlaceModel?> getPlaceById(int id) async {
     try {
-      AppLogger.info(
-        'Fetching place id: $id',
-      );
+      AppLogger.info('Fetching place id: $id');
 
-      final response =
-          await supabase
-              .from('places')
-              .select()
-              .eq('id', id)
-              .single();
+      final response = await supabase
+          .from('places')
+          .select()
+          .eq('id', id)
+          .single();
 
-      return PlaceModel.fromJson(
-        response,
-      );
+      return PlaceModel.fromJson(response);
     } catch (e) {
-      AppLogger.error(
-        'Error fetching place by id: $e',
-      );
-
+      AppLogger.error('Error fetching place by id: $e');
       return null;
     }
   }
 
-  /// ==========================
-  /// GET PLACES BY CATEGORY
-  /// ==========================
-  Future<List<PlaceModel>>
-      getPlacesByCategory(
-    int categoryId,
-  ) async {
+  // ─────────────────────────────────────
+  // GET PLACES BY CATEGORY
+  // ─────────────────────────────────────
+  Future<List<PlaceModel>> getPlacesByCategory(int categoryId) async {
     try {
-      AppLogger.info(
-        'Fetching category: $categoryId',
-      );
+      AppLogger.info('Fetching places for category: $categoryId');
 
-      final response =
-          await supabase
-              .from('places')
-              .select()
-              .eq(
-                'category_id',
-                categoryId,
-              )
-              .order('name');
+      final response = await supabase
+          .from('places')
+          .select()
+          .eq('category_id', categoryId)
+          .order('name');
 
-      AppLogger.success(
-        'Category fetched successfully',
-      );
-
-      AppLogger.info(
-        'Total places: ${response.length}',
-      );
+      AppLogger.success('Category places fetched: ${response.length}');
 
       return (response as List)
-          .map(
-            (e) => PlaceModel.fromJson(e),
-          )
+          .map((e) => PlaceModel.fromJson(e))
           .toList();
     } catch (e) {
-      AppLogger.error(
-        'Error fetching category: $e',
-      );
-
+      AppLogger.error('Error fetching category places: $e');
       rethrow;
     }
   }
 
-  /// ==========================
-  /// SEARCH PLACE
-  /// ==========================
-  Future<List<PlaceModel>>
-      searchPlaces(
-    String keyword,
-  ) async {
+  // ─────────────────────────────────────
+  // SEARCH PLACES BY KEYWORD
+  // ─────────────────────────────────────
+  Future<List<PlaceModel>> searchPlaces(String keyword) async {
     try {
-      AppLogger.info(
-        'Searching: $keyword',
-      );
+      AppLogger.info('Searching: $keyword');
 
-      final response =
-          await supabase
-              .from('places')
-              .select()
-              .ilike(
-                'name',
-                '%$keyword%',
-              );
+      final response = await supabase
+          .from('places')
+          .select()
+          .ilike('name', '%$keyword%')
+          .order('name');
 
-      AppLogger.success(
-        'Search success',
-      );
+      AppLogger.success('Search result: ${response.length} places');
 
       return (response as List)
-          .map(
-            (e) => PlaceModel.fromJson(e),
-          )
+          .map((e) => PlaceModel.fromJson(e))
           .toList();
     } catch (e) {
-      AppLogger.error(
-        'Search error: $e',
-      );
+      AppLogger.error('Search error: $e');
+      rethrow;
+    }
+  }
 
+  // ─────────────────────────────────────
+  // SEARCH + FILTER BY CATEGORY
+  // ─────────────────────────────────────
+  Future<List<PlaceModel>> searchPlacesByCategory({
+    required String keyword,
+    required int categoryId,
+  }) async {
+    try {
+      final response = await supabase
+          .from('places')
+          .select()
+          .eq('category_id', categoryId)
+          .ilike('name', '%$keyword%')
+          .order('name');
+
+      return (response as List)
+          .map((e) => PlaceModel.fromJson(e))
+          .toList();
+    } catch (e) {
+      AppLogger.error('Search+filter error: $e');
       rethrow;
     }
   }

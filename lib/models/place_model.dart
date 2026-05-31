@@ -27,35 +27,26 @@ class PlaceModel {
     this.website,
   });
 
-  factory PlaceModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory PlaceModel.fromJson(Map<String, dynamic> json) {
     try {
       return PlaceModel(
         id: json['id'],
         categoryId: json['category_id'],
         name: json['name'] ?? '',
         address: json['address'] ?? '',
-        latitude:
-            (json['latitude'] as num)
-                .toDouble(),
-        longitude:
-            (json['longitude'] as num)
-                .toDouble(),
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
         openHour: json['open_hour'],
         description: json['description'],
         photoUrl: json['photo_url'],
         rating: json['rating'] != null
-            ? (json['rating'] as num)
-                .toDouble()
+            ? (json['rating'] as num).toDouble()
             : null,
         phone: json['phone'],
         website: json['website'],
       );
     } catch (e) {
-      throw Exception(
-        'Error parsing PlaceModel: $e',
-      );
+      throw Exception('Error parsing PlaceModel: $e');
     }
   }
 }
