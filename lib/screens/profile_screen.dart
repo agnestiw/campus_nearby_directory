@@ -1,111 +1,214 @@
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _name = 'Zea Fenaya';
+  String _email = 'zea@gmail.com';
+
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _name);
+    final emailController = TextEditingController(text: _email);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Profil'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Nama'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _name = nameController.text;
+                  _email = emailController.text;
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tentang Aplikasi')),
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1A1A2E),
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // App logo
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A6FDB),
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1A6FDB).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+            // Profile Image / Avatar
+            Center(
+              child: Stack(
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A6FDB).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF1A6FDB),
+                        width: 2,
+                      ),
+                      image: const DecorationImage(
+                        image: AssetImage('assets/images/profile.jpg'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _showEditProfileDialog,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF1A6FDB),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.location_on_rounded,
-                size: 48,
-                color: Colors.white,
-              ),
             ),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 16),
-
-            const Text(
-              'Campus Nearby Directory',
-              style: TextStyle(
+            // Name and Email
+            Text(
+              _name,
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1A1A2E),
               ),
               textAlign: TextAlign.center,
             ),
-
-            const Text(
-              'v1.0.0',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF9CA3AF),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            const Text(
-              'Aplikasi direktori berbasis peta untuk menemukan\ntempat di sekitar kampus.',
-              style: TextStyle(
+            const SizedBox(height: 4),
+            Text(
+              _email,
+              style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF6B7280),
-                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
 
             const SizedBox(height: 32),
 
-            // Info cards
-            _buildInfoCard(
-              title: 'Mata Kuliah',
-              value: 'Cloud Computing',
-              icon: Icons.cloud_rounded,
-              color: const Color(0xFF1A6FDB),
+            // Profile Options Menu
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildProfileMenuItem(
+                    icon: Icons.person_outline_rounded,
+                    title: 'Edit Profil',
+                    color: const Color(0xFF1A6FDB),
+                    onTap: _showEditProfileDialog,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                  _buildProfileMenuItem(
+                    icon: Icons.settings_outlined,
+                    title: 'Pengaturan',
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () {},
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                  _buildProfileMenuItem(
+                    icon: Icons.help_outline_rounded,
+                    title: 'Pusat Bantuan',
+                    color: const Color(0xFFF59E0B),
+                    onTap: () {},
+                  ),
+                ],
+              ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
-            _buildInfoCard(
-              title: 'Stack Teknologi',
-              value: 'Flutter • Supabase • PostgreSQL\nOpenStreetMap • Geolocator',
-              icon: Icons.developer_mode_rounded,
-              color: const Color(0xFF8B5CF6),
+            // Logout Button
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: _buildProfileMenuItem(
+                icon: Icons.logout_rounded,
+                title: 'Keluar',
+                color: const Color(0xFFEF4444),
+                isLogout: true,
+                onTap: () {},
+              ),
             ),
-
-            const SizedBox(height: 12),
-
-            _buildInfoCard(
-              title: 'Sumber Data',
-              value: 'Supabase (PostgreSQL)\nbrbyvcxhgoitgwrhfyfc.supabase.co',
-              icon: Icons.storage_rounded,
-              color: const Color(0xFF0F9E75),
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildInfoCard(
-              title: 'Map Provider',
-              value: 'OpenStreetMap via flutter_map\n(Leaflet-based)',
-              icon: Icons.map_rounded,
-              color: const Color(0xFFF59E0B),
-            ),
-
+            
             const SizedBox(height: 32),
-
             const Text(
-              'Dibuat untuk Project Cloud Computing',
+              'Versi Aplikasi 1.0.0',
               style: TextStyle(
                 fontSize: 12,
                 color: Color(0xFF9CA3AF),
@@ -117,65 +220,50 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard({
-    required String title,
-    required String value,
+  Widget _buildProfileMenuItem({
     required IconData icon,
+    required String title,
     required Color color,
+    required VoidCallback onTap,
+    bool isLogout = false,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9CA3AF),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF1A1A2E),
+                  style: TextStyle(
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    height: 1.4,
+                    color: isLogout ? color : const Color(0xFF1A1A2E),
                   ),
                 ),
-              ],
-            ),
+              ),
+              if (!isLogout)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF9CA3AF),
+                  size: 20,
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

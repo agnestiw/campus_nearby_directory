@@ -78,9 +78,9 @@ class _MainNavigationState extends State<MainNavigation> {
               label: 'Favorit',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.info_outline_rounded),
-              activeIcon: Icon(Icons.info_rounded),
-              label: 'Tentang',
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person_rounded),
+              label: 'Profile',
             ),
           ],
         ),
