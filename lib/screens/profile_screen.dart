@@ -55,6 +55,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showDummySettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pengaturan'),
+        content: const Text('Ini adalah halaman pengaturan (Dummy). Fitur ini belum terhubung dengan backend.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDummyHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pusat Bantuan'),
+        content: const Text('Silakan hubungi admin@kampus.edu untuk bantuan lebih lanjut mengenai aplikasi ini.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleLogout() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Anda telah keluar dari akun (Dummy).'),
+        backgroundColor: Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,14 +211,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.settings_outlined,
                     title: 'Pengaturan',
                     color: const Color(0xFF8B5CF6),
-                    onTap: () {},
+                    onTap: _showDummySettingsDialog,
                   ),
                   const Divider(height: 1, color: Color(0xFFF3F4F6)),
                   _buildProfileMenuItem(
                     icon: Icons.help_outline_rounded,
                     title: 'Pusat Bantuan',
                     color: const Color(0xFFF59E0B),
-                    onTap: () {},
+                    onTap: _showDummyHelpDialog,
                   ),
                 ],
               ),
@@ -202,7 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Keluar',
                 color: const Color(0xFFEF4444),
                 isLogout: true,
-                onTap: () {},
+                onTap: _handleLogout,
               ),
             ),
             
