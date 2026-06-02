@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../services/auth_service.dart';
+import '../models/profile_model.dart';
+import 'auth/login_screen.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -9,12 +13,36 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _name = 'Zea Fenaya';
-  String _email = 'zea@gmail.com';
+  final AuthService _authService = AuthService();
+  
+  String _name = 'Memuat...';
+  String _email = 'memuat...';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    final userId = _authService.currentUserId;
+    final email = _authService.currentUserEmail;
+
+    if (userId != null) {
+      final profile = await _authService.getUserProfile(userId);
+      if (mounted) {
+        setState(() {
+          _name = profile?.fullName ?? 'User Tanpa Nama';
+          _email = email ?? 'Email tidak ditemukan';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _name);
-    final emailController = TextEditingController(text: _email);
 
     showDialog(
       context: context,
@@ -29,9 +57,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: const InputDecoration(labelText: 'Nama'),
               ),
               const SizedBox(height: 16),
+              // Email dinonaktifkan dari edit karena terkait auth
               TextField(
-                controller: emailController,
+                controller: TextEditingController(text: _email),
                 decoration: const InputDecoration(labelText: 'Email'),
+                enabled: false, 
               ),
             ],
           ),
@@ -42,9 +72,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () {
+                // Di tahap ini kita hanya update local state untuk dummy UI. 
+                // Untuk update Supabase membutuhkan update query ke tabel profiles.
                 setState(() {
                   _name = nameController.text;
-                  _email = emailController.text;
                 });
                 Navigator.pop(context);
               },
@@ -88,13 +119,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _handleLogout() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Anda telah keluar dari akun (Dummy).', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        backgroundColor: const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-      ),
+  Future<void> _handleLogout() async {
+    await _authService.signOut();
+    if (!mounted) return;
+    
+    // Navigasi ke halaman Login dan hapus seluruh stack halaman sebelumnya
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
     );
   }
 
@@ -116,7 +148,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
       ),
-      body: SingleChildScrollView(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A6FDB)))
+        : SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -5,7 +5,8 @@ import 'core/supabase_config.dart';
 import 'core/app_theme.dart';
 import 'core/app_logger.dart';
 import 'models/place_model.dart';
-import 'navigation/main_navigation.dart';
+// Mengubah import Home menjadi SplashScreen
+import 'screens/auth/splash_screen.dart';
 import 'screens/map_route_screen.dart';
 
 void main() async {
@@ -32,8 +33,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Campus Nearby Directory',
       theme: AppTheme.lightTheme,
-      home: const MainNavigation(),
-      // Named route untuk MapRouteScreen (dipanggil dari PlaceDetailScreen)
+      // Home diganti ke SplashScreen untuk check session
+      home: const SplashScreen(),
       onGenerateRoute: (settings) {
         if (settings.name == '/map-route') {
           final place = settings.arguments as PlaceModel;
