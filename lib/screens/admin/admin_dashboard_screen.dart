@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'admin_places_screen.dart';
 import 'admin_users_screen.dart';
+import '../../screens/auth/login_screen.dart';   // ← Tambahan import
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -29,8 +30,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✅ Berhasil keluar')),
+              
+              // Tambahan: Langsung ke halaman Login dan hapus semua route sebelumnya
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
               );
             },
             child: const Text('Keluar', style: TextStyle(color: Colors.red)),
