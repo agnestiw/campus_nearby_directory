@@ -138,4 +138,23 @@ class PlaceService {
       rethrow;
     }
   }
+
+  // ─────────────────────────────────────
+  // DELETE PLACE (ADMIN ONLY)
+  // ─────────────────────────────────────
+  Future<void> deletePlace(int id) async {
+    try {
+      AppLogger.info('Deleting place id: $id');
+
+      await supabase
+          .from('places')
+          .delete()
+          .eq('id', id);
+
+      AppLogger.success('Place id $id deleted successfully');
+    } catch (e) {
+      AppLogger.error('Error deleting place id $id: $e');
+      rethrow;
+    }
+  }
 }
