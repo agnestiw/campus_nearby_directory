@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'admin_places_screen.dart';
 import 'admin_users_screen.dart';
 
@@ -15,12 +16,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _toggleTheme() {
     setState(() => _isDarkMode = !_isDarkMode);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_isDarkMode ? '🌙 Mode Gelap Aktif' : '☀️ Mode Terang Aktif'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   void _logout() {
@@ -34,7 +29,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Logic logout sesungguhnya
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('✅ Berhasil keluar')),
               );
@@ -49,17 +43,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = _isDarkMode;
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF0F4FF);
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     final cardColor = isDark ? const Color(0xFF1E2937) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1E2937);
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: Text(
-          'Admin Dashboard',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 20),
-        ),
+        title: Text('Dashboard Admin', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 22)),
         backgroundColor: cardColor,
         elevation: 0,
         centerTitle: true,
@@ -79,16 +70,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Card (Mirip gambar)
+            // Welcome Section - Lebih Premium
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4F46E5), Color(0xFF6366F1), Color(0xFF818CF8)],
+                  colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -96,9 +94,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Selamat Datang, Admin 👋',
-                          style: TextStyle(
+                        Text(
+                          'Selamat Datang Kembali 👋',
+                          style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -106,87 +104,155 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Kelola user & tempat dengan mudah',
-                          style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.9)),
+                          'Admin Panel • Campus Nearby',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white.withOpacity(0.85),
+                            height: 1.4,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.admin_panel_settings_rounded, size: 60, color: Colors.white24),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.admin_panel_settings_rounded,
+                      size: 52,
+                      color: Colors.white,
+                    ),
+                  ),
                 ],
               ),
             ),
 
             const SizedBox(height: 32),
 
-            Text(
-              'Menu Utama',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Card Kelola User
-            _buildModernCard(
-              title: 'Kelola User',
-              subtitle: 'Kelola akun pengguna',
-              icon: Icons.people_alt_rounded,
-              color: const Color(0xFF6366F1),
-              isDark: isDark,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Card Kelola Tempat
-            _buildModernCard(
-              title: 'Kelola Tempat',
-              subtitle: 'Kelola data tempat & lokasi',
-              icon: Icons.place_rounded,
-              color: const Color(0xFF10B981),
-              isDark: isDark,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminPlacesScreen()),
-              ),
+            // Stats Grid
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.1,
+              children: [
+                _buildStatCard('Total User', '1.248', '↑ 12%', Icons.people_alt_rounded, const Color(0xFF10B981), isDark),
+                _buildStatCard('Total Tempat', '342', '↑ 8%', Icons.place_rounded, const Color(0xFF6366F1), isDark),
+                _buildStatCard('Aktif Hari Ini', '87', '↓ 3%', Icons.access_time, const Color(0xFFEF4444), isDark),
+                _buildStatCard('Pending Review', '24', '↑ 5%', Icons.pending_actions, const Color(0xFFF59E0B), isDark),
+              ],
             ),
 
             const SizedBox(height: 40),
 
-            // Stats Section (Tambahan agar mirip gambar)
+            // Menu Utama
             Text(
-              'Ringkasan',
+              'Menu Utama',
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard('Total User', '248', Icons.people, const Color(0xFF6366F1), isDark),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard('Total Tempat', '87', Icons.place, const Color(0xFF10B981), isDark),
-                ),
-              ],
+
+            _buildModernCard(
+              title: 'Kelola User',
+              subtitle: 'Kelola akun & hak akses pengguna',
+              icon: Icons.people_alt_rounded,
+              color: const Color(0xFF6366F1),
+              isDark: isDark,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUsersScreen())),
             ),
+
+            const SizedBox(height: 16),
+
+            _buildModernCard(
+              title: 'Kelola Tempat',
+              subtitle: 'Data tempat wisata & lokasi kampus',
+              icon: Icons.place_rounded,
+              color: const Color(0xFF10B981),
+              isDark: isDark,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPlacesScreen())),
+            ),
+
+            const SizedBox(height: 40),
+
+            // Recent Activity
+            Text(
+              'Aktivitas Terbaru',
+              style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: textColor),
+            ),
+            const SizedBox(height: 16),
+            _buildRecentActivity(isDark),
           ],
         ),
       ),
     );
   }
 
+  // Stat Card dengan desain lebih modern
+  Widget _buildStatCard(String title, String value, String change, IconData icon, Color color, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2937) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, size: 32, color: color),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF1E2937),
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            change,
+            style: TextStyle(
+              color: change.contains('↑') ? Colors.green : Colors.red,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Modern Card
   Widget _buildModernCard({
     required String title,
     required String subtitle,
@@ -195,84 +261,92 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required bool isDark,
     required VoidCallback onTap,
   }) {
-    final cardColor = isDark ? const Color(0xFF1E2937) : Colors.white;
-
-    return Card(
-      elevation: 8,
-      shadowColor: Colors.black.withOpacity(0.1),
-      color: cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2937) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(28),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(icon, size: 42, color: color),
                 ),
-                child: Icon(icon, size: 42, color: color),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1E2937),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 24),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1E2937))),
+                      const SizedBox(height: 6),
+                      Text(subtitle, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.4)),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
-            ],
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, bool isDark) {
-    return Card(
-      elevation: 6,
-      color: isDark ? const Color(0xFF1E2937) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  // Recent Activity yang lebih cantik
+  Widget _buildRecentActivity(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2937) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 10)),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF1E2937),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF3B82F6),
+                child: Icon(Icons.person_add, color: Colors.white),
+              ),
+              title: const Text('User baru mendaftar'),
+              subtitle: const Text('12 orang hari ini'),
+              trailing: const Chip(
+                label: Text('Baru', style: TextStyle(color: Colors.white, fontSize: 12)),
+                backgroundColor: Colors.green,
               ),
             ),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
+            const Divider(height: 8),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFF59E0B),
+                child: Icon(Icons.place, color: Colors.white),
+              ),
+              title: const Text('Tempat baru ditambahkan'),
+              subtitle: const Text('Pantai Indah Baru'),
+              trailing: const Chip(
+                label: Text('Pending', style: TextStyle(color: Colors.white, fontSize: 12)),
+                backgroundColor: Color(0xFFF59E0B),
               ),
             ),
           ],
