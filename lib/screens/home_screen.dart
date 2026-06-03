@@ -41,7 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _favService.favorites.addListener(_onFavoritesChanged);
+
+    _favService.loadFavorites();
+
+    _favService.favorites.addListener(
+      _onFavoritesChanged,
+    );
+
     _loadData();
   }
 

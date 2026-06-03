@@ -5,7 +5,7 @@ import '../models/place_model.dart';
 import 'favorites_service.dart';
 
 class PlaceService {
-  final supabase = Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
   final FavoritesService _favService = FavoritesService();
 
   // ─────────────────────────────────────
@@ -15,7 +15,7 @@ class PlaceService {
     try {
       AppLogger.info('Fetching all places...');
 
-      final response = await supabase
+      final response = await _supabase
           .from('places')
           .select()
           .order('name');
@@ -27,7 +27,8 @@ class PlaceService {
           .toList();
 
       // mark favorites
-      final favs = await _favService.getFavorites();
+      await _favService.loadFavorites();
+      final favs = _favService.favorites.value;
       for (var p in places) {
         p.isFavorite = favs.contains(p.id);
       }
@@ -46,7 +47,7 @@ class PlaceService {
     try {
       AppLogger.info('Fetching place id: $id');
 
-      final response = await supabase
+      final response = await _supabase
           .from('places')
           .select()
           .eq('id', id)
@@ -68,7 +69,7 @@ class PlaceService {
     try {
       AppLogger.info('Fetching places for category: $categoryId');
 
-      final response = await supabase
+      final response = await _supabase
           .from('places')
           .select()
           .eq('category_id', categoryId)
@@ -79,7 +80,8 @@ class PlaceService {
       final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
-      final favs = await _favService.getFavorites();
+      await _favService.loadFavorites();
+      final favs = _favService.favorites.value;
       for (var p in places) p.isFavorite = favs.contains(p.id);
       return places;
     } catch (e) {
@@ -95,7 +97,7 @@ class PlaceService {
     try {
       AppLogger.info('Searching: $keyword');
 
-      final response = await supabase
+      final response = await _supabase
           .from('places')
           .select()
           .ilike('name', '%$keyword%')
@@ -106,7 +108,8 @@ class PlaceService {
       final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
-      final favs = await _favService.getFavorites();
+      await _favService.loadFavorites();
+      final favs = _favService.favorites.value;
       for (var p in places) p.isFavorite = favs.contains(p.id);
       return places;
     } catch (e) {
@@ -123,7 +126,7 @@ class PlaceService {
     required int categoryId,
   }) async {
     try {
-      final response = await supabase
+      final response = await _supabase
           .from('places')
           .select()
           .eq('category_id', categoryId)
@@ -146,7 +149,7 @@ class PlaceService {
     try {
       AppLogger.info('Deleting place id: $id');
 
-      await supabase
+      await _supabase
           .from('places')
           .delete()
           .eq('id', id);

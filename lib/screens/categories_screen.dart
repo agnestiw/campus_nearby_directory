@@ -39,7 +39,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
-    _favService.favorites.addListener(_onFavoritesChanged);
+
+    _favService.loadFavorites();
+
+    _favService.favorites.addListener(
+      _onFavoritesChanged,
+    );
+
     _loadCategories();
     _loadLocation();
   }
