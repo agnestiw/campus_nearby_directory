@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../services/auth_service.dart';
-import '../models/profile_model.dart';
 import 'auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,7 +17,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   String _name = 'Memuat...';
   String _email = 'memuat...';
+  String? _phone;
+  String? _profilePhotoUrl;
   bool _isLoading = true;
+  bool _isUploadingPhoto = false;
 
   @override
   void initState() {
@@ -35,53 +38,249 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _name = profile?.fullName ?? 'User Tanpa Nama';
           _email = email ?? 'Email tidak ditemukan';
+          _phone = profile?.phone;
+          _profilePhotoUrl = profile?.profilePhoto;
           _isLoading = false;
         });
       }
     }
   }
 
+  Future<void> _pickAndUploadPhoto() async {
+    try {
+      debugPrint('[PICK IMAGE] Starting image picker');
+      
+      final imagePicker = ImagePicker();
+      final pickedFile = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+
+      if (pickedFile == null) {
+        debugPrint('[PICK IMAGE] User cancelled image picker');
+        return;
+      }
+
+      debugPrint('[PICK IMAGE] Image picked: ${pickedFile.path}');
+
+      if (!mounted) return;
+      setState(() => _isUploadingPhoto = true);
+
+      final userId = _authService.currentUserId;
+      if (userId == null) {
+        if (!mounted) return;
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal: User ID tidak ditemukan'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      debugPrint('[PICK IMAGE] User ID: $userId');
+
+      // Read bytes directly from XFile (works on web, android, iOS)
+      final bytes = await pickedFile.readAsBytes();
+
+      // Upload photo ke Supabase Storage
+      final photoUrl = await _authService.uploadProfilePhoto(
+        userId: userId,
+        fileBytes: bytes,
+      );
+
+      if (!mounted) return;
+
+      if (photoUrl != null) {
+        debugPrint('[PICK IMAGE] Photo uploaded successfully, updating database');
+        
+        // Update profile photo URL di database
+        final success = await _authService.updateProfilePhotoUrl(
+          userId: userId,
+          photoUrl: photoUrl,
+        );
+
+        if (!mounted) return;
+
+        if (success) {
+          setState(() {
+            _profilePhotoUrl = photoUrl;
+            _isUploadingPhoto = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto profil berhasil diperbarui!'),
+              backgroundColor: Color(0xFF34A853),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          setState(() => _isUploadingPhoto = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto terupload tapi gagal menyimpan ke database.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          setState(() => _isUploadingPhoto = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gagal mengunggah foto. Silakan coba lagi.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[PICK IMAGE ERROR]');
+      debugPrint('Exception: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _name);
+    final phoneController = TextEditingController(text: _phone ?? '');
+    bool isUpdating = false;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Edit Profil', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Nama'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Edit Profil', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nama Lengkap',
+                      border: OutlineInputBorder(),
+                    ),
+                    enabled: !isUpdating,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nomor Telepon',
+                      border: OutlineInputBorder(),
+                      hintText: '+62...',
+                    ),
+                    enabled: !isUpdating,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: TextEditingController(text: _email),
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                    enabled: false,
+                  ),
+                  if (isUpdating)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A6FDB)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Menyimpan...',
+                            style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF1A6FDB)),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 16),
-              // Email dinonaktifkan dari edit karena terkait auth
-              TextField(
-                controller: TextEditingController(text: _email),
-                decoration: const InputDecoration(labelText: 'Email'),
-                enabled: false, 
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Batal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Di tahap ini kita hanya update local state untuk dummy UI. 
-                // Untuk update Supabase membutuhkan update query ke tabel profiles.
-                setState(() {
-                  _name = nameController.text;
-                });
-                Navigator.pop(context);
-              },
-              child: Text('Simpan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: isUpdating ? null : () => Navigator.pop(context),
+                  child: Text('Batal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+                ElevatedButton(
+                  onPressed: isUpdating
+                      ? null
+                      : () async {
+                          final userId = _authService.currentUserId;
+                          if (userId == null) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Gagal: User ID tidak ditemukan')),
+                            );
+                            return;
+                          }
+
+                          setState(() => isUpdating = true);
+
+                          final success = await _authService.updateUserProfile(
+                            userId: userId,
+                            fullName: nameController.text.trim(),
+                            phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                          );
+
+                          if (!mounted) return;
+
+                          if (success) {
+                            // Update local state
+                            this.setState(() {
+                              _name = nameController.text.trim();
+                              _phone = phoneController.text.trim().isEmpty ? null : phoneController.text.trim();
+                            });
+
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profil berhasil diperbarui!'),
+                                backgroundColor: Color(0xFF34A853),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Gagal memperbarui profil. Silakan coba lagi.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            setState(() => isUpdating = false);
+                          }
+                        },
+                  child: Text('Simpan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -182,17 +381,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               offset: const Offset(0, 10),
                             ),
                           ],
-                          image: const DecorationImage(
-                            image: AssetImage('assets/images/profile.jpg'),
+                          image: DecorationImage(
+                            image: _profilePhotoUrl != null
+                                ? NetworkImage(_profilePhotoUrl!)
+                                : const AssetImage('assets/images/profile.jpg') as ImageProvider,
                             fit: BoxFit.cover,
                           ),
                         ),
+                        child: _isUploadingPhoto
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black.withOpacity(0.3),
+                                ),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      strokeWidth: 3,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
                       Positioned(
                         bottom: 4,
                         right: 4,
                         child: GestureDetector(
-                          onTap: _showEditProfileDialog,
+                          onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -200,9 +419,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 3),
                             ),
-                            child: const Icon(
-                              Icons.edit_rounded,
-                              color: Colors.white,
+                            child: Icon(
+                              Icons.photo_camera_rounded,
+                              color: Colors.white.withOpacity(_isUploadingPhoto ? 0.5 : 1.0),
                               size: 18,
                             ),
                           ),

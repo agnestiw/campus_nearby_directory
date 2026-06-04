@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../models/profile_model.dart';
 
 class AuthService {
@@ -165,6 +166,129 @@ class AuthService {
       );
     } catch (e) {
       return null;
+    }
+  }
+
+  // Update profil user ke database
+  Future<bool> updateUserProfile({
+    required String userId,
+    required String fullName,
+    String? phone,
+  }) async {
+    try {
+      await _supabase
+          .from('users')
+          .update({
+            'full_name': fullName,
+            if (phone != null) 'phone': phone,
+          })
+          .eq('id', userId);
+
+      debugPrint('[UPDATE PROFILE SUCCESS] User ID: $userId');
+      return true;
+    } catch (e) {
+      debugPrint('[UPDATE PROFILE ERROR]');
+      debugPrint(e.toString());
+      return false;
+    }
+  }
+
+  // Upload profile photo ke Supabase Storage
+  Future<String?> uploadProfilePhoto({
+    required String userId,
+    required Uint8List fileBytes,
+  }) async {
+    try {
+      debugPrint('[UPLOAD PHOTO START] File size: ${fileBytes.length} bytes');
+      
+      final fileName = 'profile_$userId.jpg';
+
+      
+      // Upload file ke storage bucket 'profile_photos'
+      try {
+        // Coba hapus file lama jika ada
+        try {
+          await _supabase.storage.from('profile_photo').remove([fileName]);
+        } catch (_) {
+          // File lama tidak ada, skip delete
+        }
+        
+        // Upload file baru
+        await _supabase.storage.from('profile_photo').uploadBinary(
+          fileName,
+          fileBytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
+        
+        debugPrint('[UPLOAD PHOTO] File uploaded successfully');
+      } catch (uploadError) {
+        debugPrint('[UPLOAD PHOTO BUCKET ERROR]');
+        debugPrint(uploadError.toString());
+        
+        // Fallback: coba ke bucket 'avatars' jika profile_photo tidak ada
+        try {
+          await _supabase.storage.from('avatars').uploadBinary(
+            fileName,
+            fileBytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+          debugPrint('[UPLOAD PHOTO] Fallback to avatars bucket successful');
+        } catch (fallbackError) {
+          debugPrint('[UPLOAD PHOTO FALLBACK ERROR]');
+          debugPrint(fallbackError.toString());
+          rethrow;
+        }
+      }
+
+      // Dapatkan public URL dari bucket yang berhasil
+      String? publicUrl;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      try {
+        final baseUrl = _supabase.storage
+            .from('profile_photo')
+            .getPublicUrl(fileName);
+        publicUrl = '$baseUrl?t=$timestamp';
+      } catch (_) {
+        try {
+          final baseUrl = _supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+          publicUrl = '$baseUrl?t=$timestamp';
+        } catch (_) {
+          debugPrint('[UPLOAD PHOTO ERROR] Gagal mendapatkan public URL');
+          return null;
+        }
+      }
+
+      debugPrint('[UPLOAD PHOTO SUCCESS] URL: $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('[UPLOAD PHOTO ERROR]');
+      debugPrint('Exception: $e');
+      debugPrint('Stack trace: ${StackTrace.current}');
+      return null;
+    }
+  }
+
+  // Update profile photo URL di database
+  Future<bool> updateProfilePhotoUrl({
+    required String userId,
+    required String photoUrl,
+  }) async {
+    try {
+      await _supabase
+          .from('users')
+          .update({
+            'profile_photo': photoUrl,
+          })
+          .eq('id', userId);
+
+      debugPrint('[UPDATE PHOTO URL SUCCESS] User ID: $userId');
+      return true;
+    } catch (e) {
+      debugPrint('[UPDATE PHOTO URL ERROR]');
+      debugPrint(e.toString());
+      return false;
     }
   }
 }

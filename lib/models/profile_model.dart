@@ -32,4 +32,13 @@ class ProfileModel {
           'student',
     );
   }
+
+  // Method untuk konversi ke JSON saat update
+  Map<String, dynamic> toJson() {
+    return {
+      'full_name': fullName,
+      'email': email,
+      'phone': phone,
+    };
+  }
 }
