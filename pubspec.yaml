@@ -44,6 +44,7 @@ dependencies:
   google_fonts: ^8.1.0
   shared_preferences: ^2.2.0
   image_picker: ^1.0.0
+  curved_labeled_navigation_bar: ^2.0.6
 
 dev_dependencies:
   flutter_test:
