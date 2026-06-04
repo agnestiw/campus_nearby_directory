@@ -12,6 +12,7 @@ import '../widgets/error_state_widget.dart';
 import '../widgets/place_card.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';
+import '../widgets/category_overlap_list.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -35,6 +36,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   bool _isLoadingPlaces = false;
 
   Position? _currentPosition;
+
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  List<CategoryModel> get _filteredCategories {
+    if (_searchQuery.isEmpty) return _categories;
+    return _categories
+        .where((cat) => cat.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+  }
 
   @override
   void initState() {
@@ -69,6 +80,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Future<void> _loadCategories() async {
     try {
       final cats = await _categoryService.getCategories();
+      final allPlaces = await _placeService.getPlaces();
+
+      for (var cat in cats) {
+        cat.placeCount = allPlaces.where((p) => p.categoryId == cat.id).length;
+      }
+
       setState(() {
         _categories = cats;
         _isLoading = false;
@@ -161,87 +178,63 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   Widget _buildCategoryGrid() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Pilih kategori tempat yang ingin kamu jelajahi',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1A1A2E),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 18,
-                mainAxisSpacing: 18,
-                childAspectRatio: 0.9,
-              ),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final cat = _categories[index];
-                final color = AppTheme.getCategoryColor(cat.name);
-                final icon = AppTheme.getCategoryIcon(cat.name);
-
-                return GestureDetector(
-                  onTap: () => _selectCategory(cat),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(32),
-                    ),
-                    child: Stack(
-                      children: [
-                        // Decorative elegant abstract shape on top right
-                        Positioned(
-                          top: -20,
-                          right: -20,
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color.withOpacity(0.08),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.6),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(icon, color: color, size: 28),
-                              ),
-                              Text(
-                                cat.name[0].toUpperCase() + cat.name.substring(1),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1A1A2E),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F2F7),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search',
+                      hintStyle: GoogleFonts.poppins(
+                        color: const Color(0xFF8E8E93),
+                        fontSize: 16,
+                      ),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF8E8E93)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF2F2F7),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
-                );
-              },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: SingleChildScrollView(
+              child: CategoryOverlapList(
+                categories: _filteredCategories,
+                onCategorySelected: _selectCategory,
+              ),
             ),
           ),
         ],
