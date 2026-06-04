@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../models/place_model.dart';
+import '../services/favorites_service.dart';
 
-class PlaceDetailScreen extends StatelessWidget {
+class PlaceDetailScreen extends StatefulWidget {
   final PlaceModel place;
   final String? categoryName;
 
@@ -15,7 +16,26 @@ class PlaceDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<PlaceDetailScreen> createState() => _PlaceDetailScreenState();
+}
+
+class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
+  final FavoritesService _favService = FavoritesService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    await _favService.loadFavorites();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final place = widget.place;
+    final categoryName = widget.categoryName;
     final catColor = AppTheme.getCategoryColor(categoryName ?? '');
     final catIcon = AppTheme.getCategoryIcon(categoryName ?? '');
 
@@ -34,7 +54,7 @@ class PlaceDetailScreen extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   CachedNetworkImage(
-                    imageUrl: place.photoUrl ?? '',
+                    imageUrl: widget.place.photoUrl ?? '',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       color: catColor.withOpacity(0.1),
@@ -55,6 +75,45 @@ class PlaceDetailScreen extends StatelessWidget {
                           Colors.transparent,
                           Colors.black.withOpacity(0.25),
                         ],
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: ValueListenableBuilder<Set<int>>(
+                          valueListenable: _favService.favorites,
+                          builder: (context, favs, _) {
+                            final isFavorite = favs.contains(widget.place.id);
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () async {
+                                await _favService.toggleFavorite(widget.place.id);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.92),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                  color: isFavorite ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+                                  size: 22,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
