@@ -163,122 +163,156 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final phoneController = TextEditingController(text: _phone ?? '');
     bool isUpdating = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Edit Profil', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-              content: Column(
+            return Padding(
+              padding: EdgeInsets.only(
+                top: 24,
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Edit Profil',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1A1A2E),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF6B7280)),
+                        onPressed: isUpdating ? null : () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Nama Lengkap',
-                      border: OutlineInputBorder(),
+                      labelStyle: GoogleFonts.poppins(color: Colors.grey),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF1A6FDB), width: 2),
+                      ),
                     ),
+                    style: GoogleFonts.poppins(),
                     enabled: !isUpdating,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
                       labelText: 'Nomor Telepon',
-                      border: OutlineInputBorder(),
+                      labelStyle: GoogleFonts.poppins(color: Colors.grey),
                       hintText: '+62...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF1A6FDB), width: 2),
+                      ),
                     ),
+                    style: GoogleFonts.poppins(),
                     enabled: !isUpdating,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: TextEditingController(text: _email),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(),
+                      labelStyle: GoogleFonts.poppins(color: Colors.grey),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: Colors.grey[100],
                     ),
+                    style: GoogleFonts.poppins(color: Colors.grey[600]),
                     enabled: false,
                   ),
-                  if (isUpdating)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A6FDB)),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Menyimpan...',
-                            style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF1A6FDB)),
-                          ),
-                        ],
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: isUpdating
+                        ? null
+                        : () async {
+                            final userId = _authService.currentUserId;
+                            if (userId == null) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Gagal: User ID tidak ditemukan')),
+                              );
+                              return;
+                            }
+
+                            setState(() => isUpdating = true);
+
+                            final success = await _authService.updateUserProfile(
+                              userId: userId,
+                              fullName: nameController.text.trim(),
+                              phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                            );
+
+                            if (!mounted) return;
+
+                            if (success) {
+                              // Update local state
+                              this.setState(() {
+                                _name = nameController.text.trim();
+                                _phone = phoneController.text.trim().isEmpty ? null : phoneController.text.trim();
+                              });
+
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Profil berhasil diperbarui!'),
+                                  backgroundColor: Color(0xFF34A853),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Gagal memperbarui profil. Silakan coba lagi.'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              setState(() => isUpdating = false);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1A6FDB),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 0,
                     ),
+                    child: isUpdating
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text('Simpan Perubahan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: isUpdating ? null : () => Navigator.pop(context),
-                  child: Text('Batal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                ),
-                ElevatedButton(
-                  onPressed: isUpdating
-                      ? null
-                      : () async {
-                          final userId = _authService.currentUserId;
-                          if (userId == null) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Gagal: User ID tidak ditemukan')),
-                            );
-                            return;
-                          }
-
-                          setState(() => isUpdating = true);
-
-                          final success = await _authService.updateUserProfile(
-                            userId: userId,
-                            fullName: nameController.text.trim(),
-                            phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-                          );
-
-                          if (!mounted) return;
-
-                          if (success) {
-                            // Update local state
-                            this.setState(() {
-                              _name = nameController.text.trim();
-                              _phone = phoneController.text.trim().isEmpty ? null : phoneController.text.trim();
-                            });
-
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Profil berhasil diperbarui!'),
-                                backgroundColor: Color(0xFF34A853),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Gagal memperbarui profil. Silakan coba lagi.'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            setState(() => isUpdating = false);
-                          }
-                        },
-                  child: Text('Simpan', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                ),
-              ],
             );
           },
         );
@@ -287,34 +321,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showDummySettingsDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Pengaturan', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-        content: Text('Ini adalah halaman pengaturan (Dummy). Fitur ini belum terhubung dengan backend.', style: GoogleFonts.poppins()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Tutup', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (context) {
+        bool isDarkMode = false;
+        bool isNotificationsEnabled = true;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(top: 24, bottom: MediaQuery.of(context).padding.bottom + 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Preferensi Aplikasi',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1A1A2E),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF6B7280)),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Divider(color: Colors.grey.withOpacity(0.1), thickness: 1),
+                  SwitchListTile(
+                    title: Text('Notifikasi', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: Text('Izinkan pop-up info', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                    value: isNotificationsEnabled,
+                    activeColor: const Color(0xFF1A6FDB),
+                    onChanged: (val) => setState(() => isNotificationsEnabled = val),
+                  ),
+                  SwitchListTile(
+                    title: Text('Mode Gelap', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: Text('Tampilan layar gelap', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                    value: isDarkMode,
+                    activeColor: const Color(0xFF1A6FDB),
+                    onChanged: (val) => setState(() => isDarkMode = val),
+                  ),
+                  ListTile(
+                    title: Text('Bahasa', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15)),
+                    subtitle: Text('Indonesia', style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF1A6FDB))),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                    onTap: () {},
+                  ),
+                  ListTile(
+                    title: Text('Kebijakan Privasi', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15)),
+                    trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   void _showDummyHelpDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Pusat Bantuan', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-        content: Text('Silakan hubungi admin@kampus.edu untuk bantuan lebih lanjut mengenai aplikasi ini.', style: GoogleFonts.poppins()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Tutup', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(top: 24, bottom: MediaQuery.of(context).padding.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pusat Bantuan',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Color(0xFF6B7280)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Divider(color: Colors.grey.withOpacity(0.1), thickness: 1),
+              ExpansionTile(
+                title: Text('Bagaimana cara upload foto profil?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: const Border(),
+                collapsedShape: const Border(),
+                children: [
+                  Text(
+                    'Klik ikon kamera di sudut kanan bawah foto profil Anda, lalu pilih foto dari galeri. Pastikan ukuran foto tidak terlalu besar.',
+                    style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+              ExpansionTile(
+                title: Text('Kenapa email tidak bisa diganti?', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: const Border(),
+                collapsedShape: const Border(),
+                children: [
+                  Text(
+                    'Email Anda terikat langsung dengan akun utama untuk keamanan dan pemulihan kata sandi.',
+                    style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: ElevatedButton.icon(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE5F8ED),
+                    foregroundColor: const Color(0xFF34A853),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.support_agent_rounded),
+                  label: Text('Hubungi Customer Service', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -332,7 +496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA), // Very soft grey/blue background
       appBar: AppBar(
         title: Text(
           'Profile',
@@ -342,7 +506,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 18,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
@@ -354,12 +518,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Vibrant Profile Header
+            // Vibrant Profile Header (Centered)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
               decoration: BoxDecoration(
                 color: const Color(0xFFE8F1FC), // Pastel Blue
                 borderRadius: BorderRadius.circular(36),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1A6FDB).withOpacity(0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -415,7 +586,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A2E),
+                              color: const Color(0xFF1A1A2E), // Dark background for contrast
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 3),
                             ),
@@ -450,62 +621,109 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _phone ?? 'Nomor telepon belum diatur',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: const Color(0xFF1A6FDB),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-            // Bento Grid for Options
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBentoCard(
-                    title: 'Edit Profil',
-                    subtitle: 'Ubah Data',
-                    icon: Icons.person_outline_rounded,
-                    backgroundColor: const Color(0xFFFFE5E5), // Pastel Pink/Red
-                    iconColor: const Color(0xFFE85D5D),
-                    onTap: _showEditProfileDialog,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildBentoCard(
-                    title: 'Pengaturan',
-                    subtitle: 'App & Privasi',
-                    icon: Icons.settings_outlined,
-                    backgroundColor: const Color(0xFFEAE5FF), // Pastel Purple
-                    iconColor: const Color(0xFF7A5DC8),
-                    onTap: _showDummySettingsDialog,
-                  ),
-                ),
-              ],
+            // Settings List - Neat but lively icons
+            Text(
+              'Pengaturan',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1A2E),
+              ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBentoCard(
-                    title: 'Bantuan',
-                    subtitle: 'FAQ & CS',
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildListItem(
+                    icon: Icons.person_outline_rounded,
+                    iconBgColor: const Color(0xFFE8F1FC),
+                    iconColor: const Color(0xFF1A6FDB),
+                    title: 'Edit Profil',
+                    subtitle: 'Ubah data diri Anda',
+                    onTap: _showEditProfileDialog,
+                  ),
+                  Divider(height: 1, color: Colors.grey.withOpacity(0.1), indent: 72, endIndent: 24),
+                  _buildListItem(
+                    icon: Icons.settings_outlined,
+                    iconBgColor: const Color(0xFFEAE5FF),
+                    iconColor: const Color(0xFF7A5DC8),
+                    title: 'Preferensi',
+                    subtitle: 'App & Privasi (Dummy)',
+                    onTap: _showDummySettingsDialog,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+            Text(
+              'Lainnya',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1A2E),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildListItem(
                     icon: Icons.help_outline_rounded,
-                    backgroundColor: const Color(0xFFFFF4D4), // Pastel Yellow
+                    iconBgColor: const Color(0xFFFFF4D4),
                     iconColor: const Color(0xFFD49900),
+                    title: 'Bantuan',
+                    subtitle: 'FAQ & Customer Service',
                     onTap: _showDummyHelpDialog,
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildBentoCard(
-                    title: 'Keluar',
-                    subtitle: 'Akhiri Sesi',
+                  Divider(height: 1, color: Colors.grey.withOpacity(0.1), indent: 72, endIndent: 24),
+                  _buildListItem(
                     icon: Icons.logout_rounded,
-                    backgroundColor: const Color(0xFFE5F8ED), // Pastel Green
-                    iconColor: const Color(0xFF34A853),
+                    iconBgColor: const Color(0xFFFFE5E5),
+                    iconColor: const Color(0xFFE85D5D),
+                    title: 'Keluar',
+                    subtitle: 'Akhiri sesi Anda',
                     onTap: _handleLogout,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             
             const SizedBox(height: 40),
@@ -525,50 +743,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBentoCard({
+  Widget _buildListItem({
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color backgroundColor,
+    required Color iconBgColor,
     required Color iconColor,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
+      borderRadius: BorderRadius.circular(28),
+      child: Padding(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(32),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6),
+                color: iconBgColor,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: iconColor, size: 28),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1A2E),
-                height: 1.2,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF1A1A2E).withOpacity(0.5),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF9CA3AF),
+                size: 20,
               ),
             ),
           ],
