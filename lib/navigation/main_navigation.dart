@@ -42,10 +42,10 @@ class _MainNavigationState extends State<MainNavigation> {
           child: CurvedNavigationBar(
             index: _currentIndex,
             height: 65, // Slightly smaller height
-            iconPadding: 10, // Makes the floating blue circle smaller
+            iconPadding: 10, // Makes the floating circle smaller
             backgroundColor: Colors.transparent, // Transparent to see page behind
-            color: const Color(0xFF1A1A2E), // Dark bar color
-            buttonBackgroundColor: const Color(0xFF1A6FDB), // Blue active circle
+            color: const Color(0xFF0B132B), // Dark bar color
+            buttonBackgroundColor: const Color(0xFFD4FF59), // Lime green active circle
             animationDuration: const Duration(milliseconds: 300),
             onTap: (index) {
               setState(() {
@@ -56,7 +56,7 @@ class _MainNavigationState extends State<MainNavigation> {
               CurvedNavigationBarItem(
                 child: Icon(
                   _currentIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
-                  color: Colors.white,
+                  color: _currentIndex == 0 ? const Color(0xFF0B132B) : Colors.white,
                   size: 24, // Smaller icons
                 ),
                 label: 'Home',
@@ -69,7 +69,7 @@ class _MainNavigationState extends State<MainNavigation> {
               CurvedNavigationBarItem(
                 child: Icon(
                   _currentIndex == 1 ? Icons.map_rounded : Icons.map_outlined,
-                  color: Colors.white,
+                  color: _currentIndex == 1 ? const Color(0xFF0B132B) : Colors.white,
                   size: 24,
                 ),
                 label: 'Peta',
@@ -82,7 +82,7 @@ class _MainNavigationState extends State<MainNavigation> {
               CurvedNavigationBarItem(
                 child: Icon(
                   _currentIndex == 2 ? Icons.grid_view_rounded : Icons.grid_view_outlined,
-                  color: Colors.white,
+                  color: _currentIndex == 2 ? const Color(0xFF0B132B) : Colors.white,
                   size: 24,
                 ),
                 label: 'Kategori',
@@ -95,7 +95,7 @@ class _MainNavigationState extends State<MainNavigation> {
               CurvedNavigationBarItem(
                 child: Icon(
                   _currentIndex == 3 ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                  color: Colors.white,
+                  color: _currentIndex == 3 ? const Color(0xFF0B132B) : Colors.white,
                   size: 24,
                 ),
                 label: 'Favorit',
@@ -108,7 +108,7 @@ class _MainNavigationState extends State<MainNavigation> {
               CurvedNavigationBarItem(
                 child: Icon(
                   _currentIndex == 4 ? Icons.person_rounded : Icons.person_outline_rounded,
-                  color: Colors.white,
+                  color: _currentIndex == 4 ? const Color(0xFF0B132B) : Colors.white,
                   size: 24,
                 ),
                 label: 'Profile',

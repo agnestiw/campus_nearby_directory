@@ -71,9 +71,10 @@ class CategoryFilterWidget extends StatelessWidget {
     required VoidCallback onTap,
     required Color baseColor,
   }) {
-    final bgColor = isSelected ? baseColor : baseColor.withOpacity(0.1);
-    final textColor = isSelected ? Colors.white : baseColor;
-    final borderColor = isSelected ? baseColor : baseColor.withOpacity(0.3);
+    final bgColor = isSelected ? const Color(0xFF0B132B) : Colors.white;
+    final iconColor = isSelected ? const Color(0xFFD4FF59) : const Color(0xFF64748B);
+    final textColor = isSelected ? Colors.white : const Color(0xFF64748B);
+    final borderColor = isSelected ? const Color(0xFF0B132B) : Colors.grey.shade300;
 
     return GestureDetector(
       onTap: onTap,
@@ -95,7 +96,7 @@ class CategoryFilterWidget extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: textColor,
+              color: iconColor,
             ),
             const SizedBox(width: 6),
             Text(
