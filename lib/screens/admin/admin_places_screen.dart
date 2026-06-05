@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../models/place_model.dart';
@@ -35,17 +34,21 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final places = await _placeService.getPlaces();
       final cats = await _categoryService.getCategories();
-
+      if (!mounted) return;
       setState(() {
         _places = places;
         _categories = cats;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -55,10 +58,12 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
 
   List<PlaceModel> get _filteredPlaces {
     return _places.where((place) {
-      final matchesSearch = 
-          place.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (place.address?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-      final matchesCategory = _selectedCategoryId == null || place.categoryId == _selectedCategoryId;
+      final q = _searchQuery.toLowerCase();
+      final matchesSearch =
+          place.name.toLowerCase().contains(q) ||
+          (place.address?.toLowerCase().contains(q) ?? false);
+      final matchesCategory =
+          _selectedCategoryId == null || place.categoryId == _selectedCategoryId;
       return matchesSearch && matchesCategory;
     }).toList();
   }
@@ -66,143 +71,356 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
   Future<void> _deletePlace(int id) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Hapus Tempat'),
         content: const Text('Apakah Anda yakin ingin menghapus tempat ini?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus',
+                style: TextStyle(color: AppTheme.danger)),
           ),
         ],
       ),
     );
 
-    if (confirmed == true) {
-      try {
-        await _placeService.deletePlace(id);
-        await _loadData();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Tempat berhasil dihapus')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('❌ Gagal menghapus: $e')),
-          );
-        }
+    if (confirmed != true) return;
+
+    try {
+      await _placeService.deletePlace(id);
+      await _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Tempat berhasil dihapus')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Gagal menghapus: $e')),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Kelola Tempat', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
+        title: Text(
+          'Kelola Tempat',
+          style: theme.textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigator.pushNamed(context, '/admin/add-place');
-        },
-        backgroundColor: const Color(0xFF1E40AF),
-        child: const Icon(Icons.add),
+        onPressed: () {},
+        backgroundColor: AppTheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         children: [
-          // Search & Filter
+          // ── Search & Filter ────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              border: Border(bottom: BorderSide(color: theme.dividerColor)),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
-                  onChanged: (value) => setState(() => _searchQuery = value),
+                  onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
                     hintText: 'Cari nama atau alamat...',
                     prefixIcon: const Icon(Icons.search_rounded),
                     filled: true,
-                    fillColor: const Color(0xFFF1F5F9),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    fillColor: theme.inputDecorationTheme.fillColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(label: const Text('Semua'), selected: _selectedCategoryId == null, onSelected: (v) => setState(() => _selectedCategoryId = null)),
-                      ..._categories.map((cat) => Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: FilterChip(
-                              label: Text(cat.name),
-                              selected: _selectedCategoryId == cat.id,
-                              onSelected: (v) => setState(() => _selectedCategoryId = v ? cat.id : null),
-                            ),
-                          )),
-                    ],
+                if (_categories.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _chip(
+                          label: 'Semua',
+                          selected: _selectedCategoryId == null,
+                          onTap: () =>
+                              setState(() => _selectedCategoryId = null),
+                        ),
+                        ..._categories.map((cat) => Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: _chip(
+                                label: cat.name,
+                                selected: _selectedCategoryId == cat.id,
+                                onTap: () => setState(() {
+                                  _selectedCategoryId =
+                                      _selectedCategoryId == cat.id
+                                          ? null
+                                          : cat.id;
+                                }),
+                              ),
+                            )),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
 
+          // ── Content ────────────────────────────────────────────────────
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? ErrorStateWidget(type: ErrorType.network, onRetry: _loadData)
+                    ? ErrorStateWidget(
+                        type: ErrorType.network, onRetry: _loadData)
                     : _filteredPlaces.isEmpty
-                        ? const Center(child: Text('Tidak ada data'))
+                        ? Center(
+                            child: Text('Tidak ada data',
+                                style: theme.textTheme.bodyMedium),
+                          )
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: _filteredPlaces.length,
-                            itemBuilder: (context, index) {
-                              final place = _filteredPlaces[index];
+                            itemBuilder: (_, i) {
+                              final place = _filteredPlaces[i];
                               final cat = _categories.firstWhere(
                                 (c) => c.id == place.categoryId,
-                                orElse: () => CategoryModel(id: 0, name: 'Lainnya'),
+                                orElse: () =>
+                                    CategoryModel(id: 0, name: 'Lainnya'),
                               );
-
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.all(12),
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: CachedNetworkImage(
-                                      imageUrl: place.photoUrl ?? '',
-                                      width: 70,
-                                      height: 70,
-                                      fit: BoxFit.cover,
-                                      placeholder: (_, __) => const Icon(Icons.place, size: 40),
-                                    ),
-                                  ),
-                                  title: Text(place.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                                  subtitle: Text(place.address, maxLines: 2, overflow: TextOverflow.ellipsis),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () {}),
-                                      IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deletePlace(place.id)),
-                                    ],
-                                  ),
-                                ),
+                              return _PlaceCard(
+                                place: place,
+                                category: cat,
+                                onDelete: () => _deletePlace(place.id),
+                                onEdit: () {},
                               );
                             },
                           ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _chip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppTheme.primary
+              : Theme.of(context).inputDecorationTheme.fillColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : Theme.of(context).hintColor,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Place Card — TIDAK pakai ListTile agar trailing tidak overflow
+// Tombol edit & delete disusun Column (vertikal) bukan Row
+// ─────────────────────────────────────────────────────────────────────────────
+class _PlaceCard extends StatelessWidget {
+  const _PlaceCard({
+    required this.place,
+    required this.category,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  final PlaceModel place;
+  final CategoryModel category;
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final catColor = AppTheme.getCategoryColor(category.name);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(
+                imageUrl: place.photoUrl ?? '',
+                width: 64,
+                height: 64,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  width: 64,
+                  height: 64,
+                  color: theme.inputDecorationTheme.fillColor,
+                  child: Icon(Icons.place_rounded,
+                      size: 30, color: theme.hintColor),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  width: 64,
+                  height: 64,
+                  color: theme.inputDecorationTheme.fillColor,
+                  child: Icon(Icons.broken_image_rounded,
+                      size: 30, color: theme.hintColor),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Info — Expanded wajib agar tidak overflow ke kanan
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nama
+                  Text(
+                    place.name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Alamat
+                  Text(
+                    place.address ?? '-',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.hintColor,
+                      height: 1.4,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Category badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: catColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      category.name,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: catColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Tombol edit & delete VERTIKAL — tidak overflow
+            // Row dua IconButton di trailing ListTile = penyebab overflow
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ActionBtn(
+                  icon: Icons.edit_rounded,
+                  color: AppTheme.primary,
+                  onTap: onEdit,
+                  tooltip: 'Edit',
+                ),
+                const SizedBox(height: 4),
+                _ActionBtn(
+                  icon: Icons.delete_rounded,
+                  color: AppTheme.danger,
+                  onTap: onDelete,
+                  tooltip: 'Hapus',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
       ),
     );
   }

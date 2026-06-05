@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/app_theme.dart';
+import '../../main.dart';
 
 import 'admin_places_screen.dart';
 import 'admin_users_screen.dart';
-import '../../screens/auth/login_screen.dart';   // ← Tambahan import
+import '../../screens/auth/login_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -13,32 +15,34 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  bool _isDarkMode = false;
-
   void _toggleTheme() {
-    setState(() => _isDarkMode = !_isDarkMode);
+    MyApp.of(context)?.toggleTheme();
   }
 
   void _logout() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Keluar Akun'),
         content: const Text('Apakah Anda yakin ingin keluar dari Admin Panel?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              
-              // Tambahan: Langsung ke halaman Login dan hapus semua route sebelumnya
+              Navigator.pop(ctx);
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
                 (route) => false,
               );
             },
-            child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Keluar',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
       ),
@@ -47,209 +51,166 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = _isDarkMode;
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardColor = isDark ? const Color(0xFF1E2937) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1E2937);
+    // Semua warna diambil dari theme — tidak ada hardcoded color di build()
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        title: Text('Dashboard Admin', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 22)),
-        backgroundColor: cardColor,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode_rounded),
-            onPressed: _toggleTheme,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.red),
-            onPressed: _logout,
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Section - Lebih Premium
-            Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ──────────────────────────────────────────────────
+              _buildHeader(theme, colorScheme),
+              const SizedBox(height: 18),
+
+              // ── Welcome Banner ───────────────────────────────────────────
+              _buildWelcomeBanner(theme),
+              const SizedBox(height: 24),
+
+              // ── Statistik ────────────────────────────────────────────────
+              _buildSectionLabel(theme, 'Statistik', 'Ringkasan'),
+              const SizedBox(height: 12),
+              _buildStatsGrid(theme, colorScheme),
+              const SizedBox(height: 24),
+
+              // ── Menu Utama ───────────────────────────────────────────────
+              _buildSectionLabel(theme, 'Menu Utama', null),
+              const SizedBox(height: 12),
+              _buildMenuCard(
+                theme: theme,
+                title: 'Kelola User',
+                subtitle: 'Kelola akun & hak akses pengguna',
+                icon: Icons.people_alt_rounded,
+                accentColor: colorScheme.primary,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
                 ),
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF4F46E5).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Selamat Datang Kembali 👋',
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Admin Panel • Campus Nearby',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withOpacity(0.85),
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.admin_panel_settings_rounded,
-                      size: 52,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 12),
+              _buildMenuCard(
+                theme: theme,
+                title: 'Kelola Tempat',
+                subtitle: 'Data tempat wisata & lokasi kampus',
+                icon: Icons.place_rounded,
+                accentColor: colorScheme.secondary,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminPlacesScreen()),
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
 
-            const SizedBox(height: 32),
-
-            // Stats Grid
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.1,
-              children: [
-                _buildStatCard('Total User', '1.248', '↑ 12%', Icons.people_alt_rounded, const Color(0xFF10B981), isDark),
-                _buildStatCard('Total Tempat', '342', '↑ 8%', Icons.place_rounded, const Color(0xFF6366F1), isDark),
-                _buildStatCard('Aktif Hari Ini', '87', '↓ 3%', Icons.access_time, const Color(0xFFEF4444), isDark),
-                _buildStatCard('Pending Review', '24', '↑ 5%', Icons.pending_actions, const Color(0xFFF59E0B), isDark),
-              ],
-            ),
-
-            const SizedBox(height: 40),
-
-            // Menu Utama
-            Text(
-              'Menu Utama',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            _buildModernCard(
-              title: 'Kelola User',
-              subtitle: 'Kelola akun & hak akses pengguna',
-              icon: Icons.people_alt_rounded,
-              color: const Color(0xFF6366F1),
-              isDark: isDark,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUsersScreen())),
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildModernCard(
-              title: 'Kelola Tempat',
-              subtitle: 'Data tempat wisata & lokasi kampus',
-              icon: Icons.place_rounded,
-              color: const Color(0xFF10B981),
-              isDark: isDark,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPlacesScreen())),
-            ),
-
-            const SizedBox(height: 40),
-
-            // Recent Activity
-            Text(
-              'Aktivitas Terbaru',
-              style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600, color: textColor),
-            ),
-            const SizedBox(height: 16),
-            _buildRecentActivity(isDark),
-          ],
+              // ── Aktivitas Terbaru ────────────────────────────────────────
+              _buildSectionLabel(theme, 'Aktivitas Terbaru', null),
+              const SizedBox(height: 12),
+              _buildRecentActivity(theme, colorScheme),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Stat Card dengan desain lebih modern
-  Widget _buildStatCard(String title, String value, String change, IconData icon, Color color, bool isDark) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Header
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildHeader(ThemeData theme, ColorScheme cs) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Dashboard Admin',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        // Toggle dark/light
+        IconButton(
+          tooltip: theme.brightness == Brightness.dark ? 'Mode Terang' : 'Mode Gelap',
+          icon: Icon(
+            theme.brightness == Brightness.dark
+                ? Icons.light_mode_rounded
+                : Icons.dark_mode_rounded,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          onPressed: _toggleTheme,
+        ),
+        // Logout
+        IconButton(
+          tooltip: 'Keluar',
+          icon: Icon(Icons.logout_rounded, color: cs.error),
+          onPressed: _logout,
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Welcome Banner
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildWelcomeBanner(ThemeData theme) {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2937) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(0.80),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
+            color: theme.colorScheme.primary.withOpacity(0.25),
+            blurRadius: 18,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Selamat Datang Kembali 👋',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Admin • Campus Nearby',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.white.withOpacity(0.18),
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 32, color: color),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF1E2937),
-            ),
-          ),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 15,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            change,
-            style: TextStyle(
-              color: change.contains('↑') ? Colors.green : Colors.red,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+            child: const Icon(
+              Icons.admin_panel_settings_rounded,
+              size: 32,
+              color: Colors.white,
             ),
           ),
         ],
@@ -257,24 +218,152 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // Modern Card
-  Widget _buildModernCard({
+  // ─────────────────────────────────────────────────────────────────────────
+  // Section Label
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildSectionLabel(ThemeData theme, String title, String? trailing) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        if (trailing != null)
+          Text(
+            trailing,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Stats Grid  (2 kolom, tinggi mengikuti konten via aspectRatio)
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildStatsGrid(ThemeData theme, ColorScheme cs) {
+    final stats = [
+      _StatItem('Total User', '1.248', '↑ 12%', Icons.people_alt_rounded, cs.primary),
+      _StatItem('Total Tempat', '342', '↑ 8%', Icons.place_rounded, cs.secondary),
+      _StatItem('Aktif Hari Ini', '87', '↓ 3%', Icons.access_time_rounded, cs.error),
+      _StatItem('Pending Review', '24', '↑ 5%', Icons.pending_actions_rounded, AppTheme.warning),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: stats.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        // Rasio 1.1 → card tidak terlalu tinggi, cukup muat isi konten
+        childAspectRatio: 1.1,
+      ),
+      itemBuilder: (_, i) => _buildStatCard(theme, stats[i]),
+    );
+  }
+
+  Widget _buildStatCard(ThemeData theme, _StatItem item) {
+    final isPositive = item.change.contains('↑');
+    final changeColor = isPositive
+        ? const Color(0xFF22C55E) // green-500 — bisa ganti dengan cs.secondary jika cocok
+        : theme.colorScheme.error;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon badge
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: item.color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(item.icon, size: 22, color: item.color),
+          ),
+          const SizedBox(height: 10),
+          // Value
+          Text(
+            item.value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          // Title
+          Text(
+            item.title,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          // Change badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: changeColor.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              item.change,
+              style: TextStyle(
+                color: changeColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Menu Card
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildMenuCard({
+    required ThemeData theme,
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color color,
-    required bool isDark,
+    required Color accentColor,
     required VoidCallback onTap,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2937) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: theme.shadowColor.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -282,31 +371,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    color: accentColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, size: 42, color: color),
+                  child: Icon(icon, size: 26, color: accentColor),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1E2937))),
-                      const SizedBox(height: 6),
-                      Text(subtitle, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], height: 1.4)),
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ],
             ),
           ),
@@ -315,48 +423,104 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  // Recent Activity yang lebih cantik
-  Widget _buildRecentActivity(bool isDark) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Recent Activity
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildRecentActivity(ThemeData theme, ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2937) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF3B82F6),
-                child: Icon(Icons.person_add, color: Colors.white),
-              ),
-              title: const Text('User baru mendaftar'),
-              subtitle: const Text('12 orang hari ini'),
-              trailing: const Chip(
-                label: Text('Baru', style: TextStyle(color: Colors.white, fontSize: 12)),
-                backgroundColor: Colors.green,
-              ),
-            ),
-            const Divider(height: 8),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFF59E0B),
-                child: Icon(Icons.place, color: Colors.white),
-              ),
-              title: const Text('Tempat baru ditambahkan'),
-              subtitle: const Text('Pantai Indah Baru'),
-              trailing: const Chip(
-                label: Text('Pending', style: TextStyle(color: Colors.white, fontSize: 12)),
-                backgroundColor: Color(0xFFF59E0B),
-              ),
-            ),
-          ],
+      child: Column(
+        children: [
+          _buildActivityTile(
+            theme: theme,
+            icon: Icons.person_add_rounded,
+            avatarColor: cs.secondary,
+            title: 'User baru mendaftar',
+            subtitle: '12 orang hari ini',
+            badge: 'Baru',
+            badgeColor: cs.secondary,
+          ),
+          Divider(height: 1, color: theme.dividerColor),
+          _buildActivityTile(
+            theme: theme,
+            icon: Icons.place_rounded,
+            avatarColor: AppTheme.warning,
+            title: 'Tempat baru ditambahkan',
+            subtitle: 'Pantai Indah Baru',
+            badge: 'Pending',
+            badgeColor: AppTheme.warning,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityTile({
+    required ThemeData theme,
+    required IconData icon,
+    required Color avatarColor,
+    required String title,
+    required String subtitle,
+    required String badge,
+    required Color badgeColor,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: CircleAvatar(
+        backgroundColor: avatarColor,
+        radius: 20,
+        child: Icon(icon, color: Colors.white, size: 18),
+      ),
+      title: Text(
+        title,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: badgeColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          badge,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data model kecil untuk stat card
+// ─────────────────────────────────────────────────────────────────────────────
+class _StatItem {
+  const _StatItem(this.title, this.value, this.change, this.icon, this.color);
+  final String title;
+  final String value;
+  final String change;
+  final IconData icon;
+  final Color color;
 }
