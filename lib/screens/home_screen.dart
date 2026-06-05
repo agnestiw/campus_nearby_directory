@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -8,10 +10,11 @@ import '../services/location_service.dart';
 import '../services/place_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/distance_helper.dart';
-import '../widgets/category_filter_widget.dart';
 import '../widgets/error_state_widget.dart';
 import '../widgets/place_card.dart';
 import '../widgets/search_bar_widget.dart';
+import '../core/app_theme.dart';
+import 'place_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,32 +32,62 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PlaceModel> _allPlaces = [];
   List<PlaceModel> _filteredPlaces = [];
   List<CategoryModel> _categories = [];
-  Map<int, String> _categoryMap = {}; // id -> name
+  Map<int, String> _categoryMap = {};
 
   Position? _currentPosition;
-  int? _selectedCategoryId;
   String _searchKeyword = '';
+  int? _selectedCategoryId;
 
   bool _isLoading = true;
   String? _errorMessage;
+
+  late PageController _pageController;
+  Timer? _carouselTimer;
+  int _currentCarouselIndex = 0;
 
   @override
   void initState() {
     super.initState();
 
-    _favService.loadFavorites();
+    _pageController = PageController();
+    _startCarousel();
 
-    _favService.favorites.addListener(
-      _onFavoritesChanged,
-    );
+    _favService.loadFavorites();
+    _favService.favorites.addListener(_onFavoritesChanged);
 
     _loadData();
   }
 
   @override
   void dispose() {
+    _carouselTimer?.cancel();
+    _pageController.dispose();
     _favService.favorites.removeListener(_onFavoritesChanged);
     super.dispose();
+  }
+
+  void _startCarousel() {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+      final spots = _spotOfTheDayPlaces;
+      if (spots.isNotEmpty) {
+        setState(() {
+          _currentCarouselIndex = (_currentCarouselIndex + 1) % spots.length;
+        });
+        if (_pageController.hasClients) {
+          _pageController.animateToPage(
+            _currentCarouselIndex,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    });
+  }
+
+  List<PlaceModel> get _spotOfTheDayPlaces {
+    final sorted = List<PlaceModel>.from(_allPlaces);
+    sorted.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+    return sorted.take(3).toList();
   }
 
   void _onFavoritesChanged() {
@@ -77,7 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // Load categories dan places secara parallel
       final results = await Future.wait([
         _categoryService.getCategories(),
         _placeService.getPlaces(),
@@ -86,10 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final categories = results[0] as List<CategoryModel>;
       final places = results[1] as List<PlaceModel>;
 
-      // Build category map untuk lookup cepat
       final categoryMap = {for (var c in categories) c.id: c.name};
 
-      // Load GPS (non-blocking — tidak gagalkan seluruh halaman)
       _loadLocation();
 
       setState(() {
@@ -111,30 +141,27 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await _locationService.getCurrentLocation();
     if (result.isSuccess && mounted) {
       setState(() => _currentPosition = result.position);
+      _applyFilter();
     }
   }
 
   void _applyFilter() {
     List<PlaceModel> filtered = _allPlaces;
 
-    // Filter kategori
     if (_selectedCategoryId != null) {
-      filtered = filtered
-          .where((p) => p.categoryId == _selectedCategoryId)
-          .toList();
+      filtered = filtered.where((p) => p.categoryId == _selectedCategoryId).toList();
     }
 
-    // Filter search
     if (_searchKeyword.isNotEmpty) {
       final kw = _searchKeyword.toLowerCase();
-      filtered = filtered
-          .where((p) =>
-              p.name.toLowerCase().contains(kw) ||
-              p.address.toLowerCase().contains(kw))
-          .toList();
+      filtered = filtered.where((p) {
+        final catName = _categoryMap[p.categoryId]?.toLowerCase() ?? '';
+        return p.name.toLowerCase().contains(kw) ||
+               p.address.toLowerCase().contains(kw) ||
+               catName.contains(kw);
+      }).toList();
     }
 
-    // Urutkan berdasarkan jarak jika GPS tersedia
     if (_currentPosition != null) {
       filtered.sort((a, b) {
         final distA = DistanceHelper.calculateDistance(
@@ -170,132 +197,146 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ───────────────────────────────
-            _buildHeader(),
+      backgroundColor: Colors.white,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0F172A), // Dark Slate
+              Color(0xFF3B82F6), // Vibrant Blue
+            ],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 24),
+                              // ── Search ───────────────────────────────
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                  child: SearchBarWidget(
+                                    hint: 'Cari cafe, fotokopi, ATM...',
+                                    onChanged: (value) {
+                                      _searchKeyword = value;
+                                      _applyFilter();
+                                    },
+                                    onFilterTap: () {
+                                      _showFilterBottomSheet();
+                                    },
+                                  ),
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 20),
 
-            // ── Search ───────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: SearchBarWidget(
-                hint: 'Cari cafe, fotokopi, ATM...',
-                onChanged: (value) {
-                  _searchKeyword = value;
-                  _applyFilter();
-                },
-              ),
-            ),
+                            // ── Spot of the Day ────────────────────
+                            if (!_isLoading && _searchKeyword.isEmpty && _selectedCategoryId == null)
+                              _buildSpotCarousel(),
 
-            // ── Category Filter ───────────────────────
-            if (_categories.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: CategoryFilterWidget(
-                  categories: _categories,
-                  selectedCategoryId: _selectedCategoryId,
-                  onCategorySelected: (id) {
-                    _selectedCategoryId = id;
-                    _applyFilter();
-                  },
-                ),
-              ),
+                            if (!_isLoading && _searchKeyword.isEmpty && _selectedCategoryId == null)
+                              const SizedBox(height: 32),
 
-            // ── Result count ─────────────────────────
-            if (!_isLoading && _errorMessage == null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  '${_filteredPlaces.length} tempat ditemukan'
-                  '${_currentPosition != null ? ' • diurutkan berdasarkan jarak' : ''}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9CA3AF),
+                            // ── Rekomendasi Terdekat ────────────────
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    _searchKeyword.isEmpty ? 'Rekomendasi Terdekat' : 'Hasil Pencarian',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1A1A2E),
+                                    ),
+                                  ),
+
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ),
+                      ),
+
+                      // ── Content ──────────────────────────────
+                      _buildContent(),
+                    ],
                   ),
                 ),
               ),
-
-            // ── Content ──────────────────────────────
-            Expanded(
-              child: _buildContent(),
             ),
           ],
         ),
+      ),
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Text(
-                '📍',
-                style: TextStyle(fontSize: 20),
+              const Icon(
+                Icons.location_on,
+                color: Colors.white,
+                size: 24,
               ),
               const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Campus Nearby',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
-              ),
-              // GPS indicator
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: _currentPosition != null
-                      ? const Color(0xFF0F9E75).withOpacity(0.1)
-                      : const Color(0xFF9CA3AF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _currentPosition != null
-                          ? Icons.gps_fixed_rounded
-                          : Icons.gps_not_fixed_rounded,
-                      size: 12,
-                      color: _currentPosition != null
-                          ? const Color(0xFF0F9E75)
-                          : const Color(0xFF9CA3AF),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _currentPosition != null ? 'GPS Aktif' : 'GPS...',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: _currentPosition != null
-                            ? const Color(0xFF0F9E75)
-                            : const Color(0xFF9CA3AF),
-                      ),
-                    ),
-                  ],
+              const Text(
+                'Campus Nearby',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Temukan tempat di sekitar kampusmu',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7280),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_none_rounded,
+              color: Color(0xFF1A1A2E),
+              size: 22,
             ),
           ),
         ],
@@ -303,38 +344,335 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSpotCarousel() {
+    final spots = _spotOfTheDayPlaces;
+    if (spots.isEmpty) return const SizedBox();
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 240,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentCarouselIndex = index;
+              });
+            },
+            itemCount: spots.length,
+            itemBuilder: (context, index) {
+              return _buildSpotCard(spots[index]);
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(spots.length, (index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: _currentCarouselIndex == index ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _currentCarouselIndex == index ? const Color(0xFF3B82F6) : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Filter Kategori", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Semua'),
+                          selected: _selectedCategoryId == null,
+                          onSelected: (val) {
+                            setState(() => _selectedCategoryId = null);
+                            setModalState(() {});
+                            _applyFilter();
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ..._categories.map((cat) => ChoiceChip(
+                          label: Text(cat.name),
+                          selected: _selectedCategoryId == cat.id,
+                          onSelected: (val) {
+                            setState(() => _selectedCategoryId = cat.id);
+                            setModalState(() {});
+                            _applyFilter();
+                            Navigator.pop(context);
+                          },
+                        )).toList(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
+  Widget _buildSpotCard(PlaceModel place) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlaceDetailScreen(
+              place: place,
+              categoryName: _categoryMap[place.categoryId],
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        height: 240,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          image: DecorationImage(
+            image: CachedNetworkImageProvider(place.photoUrl ?? ''),
+            fit: BoxFit.cover,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            )
+          ]
+        ),
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.1),
+                    Colors.black.withOpacity(0.8),
+                  ],
+                ),
+              ),
+            ),
+            // TOP BADGES
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.stars_rounded, color: Color(0xFF8B5CF6), size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'SPOT OF THE DAY',
+                      style: TextStyle(
+                        color: Color(0xFF8B5CF6),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.favorite_border_rounded,
+                  color: Color(0xFF1A1A2E),
+                  size: 18,
+                ),
+              ),
+            ),
+            // BOTTOM CONTENT
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.local_cafe_rounded, color: Colors.white, size: 12),
+                        const SizedBox(width: 6),
+                        Text(
+                          _categoryMap[place.categoryId] ?? 'Kategori',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    place.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${place.rating ?? 0.0} (230 review)',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, color: Colors.white, size: 16),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                place.address,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: const [
+                            Text(
+                              'Lihat Detail',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 14),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SliverToBoxAdapter(
+        child: Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator())),
+      );
     }
 
     if (_errorMessage != null) {
-      return ErrorStateWidget(
-        type: ErrorType.network,
-        onRetry: _loadData,
+      return SliverToBoxAdapter(
+        child: ErrorStateWidget(
+          type: ErrorType.network,
+          onRetry: _loadData,
+        ),
       );
     }
 
     if (_filteredPlaces.isEmpty) {
-      return ErrorStateWidget(
-        type: ErrorType.empty,
-        onRetry: () {
-          setState(() {
-            _searchKeyword = '';
-            _selectedCategoryId = null;
-          });
-          _applyFilter();
-        },
+      return SliverToBoxAdapter(
+        child: ErrorStateWidget(
+          type: ErrorType.empty,
+          onRetry: () {
+            setState(() {
+              _searchKeyword = '';
+            });
+            _applyFilter();
+          },
+        ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 16),
-        itemCount: _filteredPlaces.length,
-        itemBuilder: (context, index) {
-          final place = _filteredPlaces[index];
+    // Since Spot of the Day is now a top 3 rated carousel separate from the list, we show all filteredPlaces in Rekomendasi
+    final listPlaces = _filteredPlaces;
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final place = listPlaces[index];
           return PlaceCard(
             place: place,
             categoryName: _categoryMap[place.categoryId],
@@ -345,6 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
         },
+        childCount: listPlaces.length,
       ),
     );
   }
