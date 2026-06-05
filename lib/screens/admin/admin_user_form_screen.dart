@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/app_theme.dart';
 import '../../models/profile_model.dart';
 import '../../models/role_model.dart';
 import '../../services/user_service.dart';
@@ -103,6 +102,9 @@ class _AdminUserFormScreenState extends State<AdminUserFormScreen> {
         );
       }
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_isCreate ? 'User berhasil dibuat' : 'Perubahan user berhasil disimpan')),
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;

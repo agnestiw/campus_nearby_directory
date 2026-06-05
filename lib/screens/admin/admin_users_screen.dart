@@ -72,7 +72,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     if (confirmed != true) return;
 
     try {
-      await _userService.deleteUser(userId);
+      final deleted = await _userService.deleteUser(userId);
+      if (!deleted) {
+        throw Exception('Penghapusan user gagal');
+      }
       await _loadUsers();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User berhasil dihapus')));

@@ -88,7 +88,7 @@ class UserService {
     }
   }
 
-  Future<void> updateUser({
+  Future<ProfileModel> updateUser({
     required String userId,
     required String fullName,
     String? phone,
@@ -101,16 +101,37 @@ class UserService {
         'role_id': roleId,
         if (phone != null) 'phone': phone,
       }).eq('id', userId);
+
+      final updatedUser = await getUserById(userId);
+      if (updatedUser == null) {
+        throw Exception('User tidak ditemukan setelah update');
+      }
+      return updatedUser;
     } catch (e) {
       AppLogger.error('Error updating user: $e');
       rethrow;
     }
   }
 
-  Future<void> deleteUser(String userId) async {
+  Future<bool> deleteUser(String userId) async {
     try {
       AppLogger.info('Deleting user $userId');
-      await _supabase.from('users').delete().eq('id', userId);
+
+      final existing = await _supabase.from('users').select('id').eq('id', userId).maybeSingle();
+      AppLogger.info('Existing user lookup for $userId: $existing');
+
+      if (existing == null) {
+        throw Exception('User dengan id $userId tidak ditemukan sebelum delete');
+      }
+
+      final response = await _supabase.from('users').delete().eq('id', userId).select();
+      AppLogger.info('Delete response for user $userId: $response');
+
+      if (response is List && response.isNotEmpty) {
+        return true;
+      }
+
+      throw Exception('Delete query dijalankan tetapi tidak ada baris dihapus. Periksa kebijakan RLS/permission.');
     } catch (e) {
       AppLogger.error('Error deleting user: $e');
       rethrow;
