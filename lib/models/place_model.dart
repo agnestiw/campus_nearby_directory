@@ -54,4 +54,35 @@ class PlaceModel {
       throw Exception('Error parsing PlaceModel: $e');
     }
   }
+
+  PlaceModel copyWith({
+    int? categoryId,
+    String? name,
+    String? address,
+    double? latitude,
+    double? longitude,
+    String? openHour,
+    String? description,
+    String? photoUrl,
+    double? rating,
+    String? phone,
+    String? website,
+    bool? isFavorite,
+  }) {
+    return PlaceModel(
+      id: id,
+      categoryId: categoryId ?? this.categoryId,
+      name: name ?? this.name,
+      address: address ?? this.address,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      openHour: openHour ?? this.openHour,
+      description: description ?? this.description,
+      photoUrl: photoUrl ?? this.photoUrl,
+      rating: rating ?? this.rating,
+      phone: phone ?? this.phone,
+      website: website ?? this.website,
+      isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
 }

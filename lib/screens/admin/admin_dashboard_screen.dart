@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../../models/profile_model.dart';
+import '../../models/place_model.dart';
+import '../../services/user_service.dart';
+import '../../services/place_service.dart';
+import '../../services/category_service.dart';
+import '../../widgets/error_state_widget.dart';
 
 import 'admin_places_screen.dart';
 import 'admin_users_screen.dart';
+import 'admin_categories_screen.dart';
 import '../../screens/auth/login_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -15,6 +22,52 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  final UserService _userService = UserService();
+  final PlaceService _placeService = PlaceService();
+  final CategoryService _categoryService = CategoryService();
+
+  bool _isLoading = true;
+  String? _error;
+  int _userCount = 0;
+  int _placeCount = 0;
+  int _categoryCount = 0;
+  List<ProfileModel> _recentUsers = [];
+  List<PlaceModel> _recentPlaces = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final users = await _userService.countUsers();
+      final places = await _placeService.countPlaces();
+      final categories = await _categoryService.countCategories();
+      final recentUsers = await _userService.getRecentUsers(limit: 2);
+      final recentPlaces = await _placeService.getRecentPlaces(limit: 2);
+      if (!mounted) return;
+      setState(() {
+        _userCount = users;
+        _placeCount = places;
+        _categoryCount = categories;
+        _recentUsers = recentUsers;
+        _recentPlaces = recentPlaces;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
   void _toggleTheme() {
     MyApp.of(context)?.toggleTheme();
   }
@@ -58,9 +111,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? ErrorStateWidget(type: ErrorType.network, onRetry: _loadDashboardData)
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header ──────────────────────────────────────────────────
@@ -80,29 +137,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               // ── Menu Utama ───────────────────────────────────────────────
               _buildSectionLabel(theme, 'Menu Utama', null),
               const SizedBox(height: 12),
-              _buildMenuCard(
-                theme: theme,
-                title: 'Kelola User',
-                subtitle: 'Kelola akun & hak akses pengguna',
-                icon: Icons.people_alt_rounded,
-                accentColor: colorScheme.primary,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
+                _buildMenuCard(
+                  theme: theme,
+                  title: 'Kelola User',
+                  subtitle: 'Kelola akun & hak akses pengguna',
+                  icon: Icons.people_alt_rounded,
+                  accentColor: colorScheme.primary,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
+                  ).then((_) => _loadDashboardData()),
                 ),
-              ),
               const SizedBox(height: 12),
-              _buildMenuCard(
-                theme: theme,
-                title: 'Kelola Tempat',
-                subtitle: 'Data tempat wisata & lokasi kampus',
-                icon: Icons.place_rounded,
-                accentColor: colorScheme.secondary,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminPlacesScreen()),
+                _buildMenuCard(
+                  theme: theme,
+                  title: 'Kelola Tempat',
+                  subtitle: 'Data tempat wisata & lokasi kampus',
+                  icon: Icons.place_rounded,
+                  accentColor: colorScheme.secondary,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminPlacesScreen()),
+                  ).then((_) => _loadDashboardData()),
                 ),
-              ),
+              const SizedBox(height: 12),
+                _buildMenuCard(
+                  theme: theme,
+                  title: 'Kelola Kategori',
+                  subtitle: 'Manajemen kategori tempat',
+                  icon: Icons.category_rounded,
+                  accentColor: AppTheme.warning,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminCategoriesScreen()),
+                  ).then((_) => _loadDashboardData()),
+                ),
               const SizedBox(height: 24),
 
               // ── Aktivitas Terbaru ────────────────────────────────────────
@@ -249,10 +318,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildStatsGrid(ThemeData theme, ColorScheme cs) {
     final stats = [
-      _StatItem('Total User', '1.248', '↑ 12%', Icons.people_alt_rounded, cs.primary),
-      _StatItem('Total Tempat', '342', '↑ 8%', Icons.place_rounded, cs.secondary),
-      _StatItem('Aktif Hari Ini', '87', '↓ 3%', Icons.access_time_rounded, cs.error),
-      _StatItem('Pending Review', '24', '↑ 5%', Icons.pending_actions_rounded, AppTheme.warning),
+      _StatItem('Total User', '$_userCount', '', Icons.people_alt_rounded, cs.primary),
+      _StatItem('Total Tempat', '$_placeCount', '', Icons.place_rounded, cs.secondary),
+      _StatItem('Total Kategori', '$_categoryCount', '', Icons.category_rounded, AppTheme.warning),
+      _StatItem('Aktivitas Terbaru', '${_recentUsers.length + _recentPlaces.length}', '', Icons.access_time_rounded, cs.error),
     ];
 
     return GridView.builder(
@@ -427,6 +496,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // Recent Activity
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildRecentActivity(ThemeData theme, ColorScheme cs) {
+    final activityTiles = <Widget>[];
+    activityTiles.addAll(_recentUsers.map(
+      (user) => _buildActivityTile(
+        theme: theme,
+        icon: Icons.person_add_rounded,
+        avatarColor: cs.secondary,
+        title: user.fullName,
+        subtitle: user.email,
+        badge: user.roleName,
+        badgeColor: cs.secondary,
+      ),
+    ));
+    activityTiles.addAll(_recentPlaces.map(
+      (place) => _buildActivityTile(
+        theme: theme,
+        icon: Icons.place_rounded,
+        avatarColor: AppTheme.warning,
+        title: place.name,
+        subtitle: place.address,
+        badge: 'Tempat',
+        badgeColor: AppTheme.warning,
+      ),
+    ));
+
+    if (activityTiles.isEmpty) {
+      activityTiles.add(
+        Padding(
+          padding: const EdgeInsets.all(18),
+          child: Text('Belum ada aktivitas terbaru', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -441,25 +543,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Column(
         children: [
-          _buildActivityTile(
-            theme: theme,
-            icon: Icons.person_add_rounded,
-            avatarColor: cs.secondary,
-            title: 'User baru mendaftar',
-            subtitle: '12 orang hari ini',
-            badge: 'Baru',
-            badgeColor: cs.secondary,
-          ),
-          Divider(height: 1, color: theme.dividerColor),
-          _buildActivityTile(
-            theme: theme,
-            icon: Icons.place_rounded,
-            avatarColor: AppTheme.warning,
-            title: 'Tempat baru ditambahkan',
-            subtitle: 'Pantai Indah Baru',
-            badge: 'Pending',
-            badgeColor: AppTheme.warning,
-          ),
+          for (var i = 0; i < activityTiles.length; i++) ...[
+            activityTiles[i],
+            if (i < activityTiles.length - 1) Divider(height: 1, color: theme.dividerColor),
+          ],
         ],
       ),
     );

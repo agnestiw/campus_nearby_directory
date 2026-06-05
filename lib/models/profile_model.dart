@@ -5,6 +5,7 @@ class ProfileModel {
   final String email;
   final String? phone;
   final String? profilePhoto;
+  final String? createdAt;
   final String roleName;
 
   ProfileModel({
@@ -14,6 +15,7 @@ class ProfileModel {
     required this.email,
     this.phone,
     this.profilePhoto,
+    this.createdAt,
     required this.roleName,
   });
 
@@ -27,6 +29,7 @@ class ProfileModel {
       email: json['email'] ?? '',
       phone: json['phone'],
       profilePhoto: json['profile_photo'],
+      createdAt: json['created_at'] as String?,
       roleName:
           json['roles']?['name'] ??
           'student',

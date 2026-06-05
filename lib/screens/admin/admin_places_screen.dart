@@ -7,6 +7,7 @@ import '../../services/place_service.dart';
 import '../../services/category_service.dart';
 import '../../core/app_theme.dart';
 import '../../widgets/error_state_widget.dart';
+import 'admin_place_form_screen.dart';
 
 class AdminPlacesScreen extends StatefulWidget {
   const AdminPlacesScreen({super.key});
@@ -107,6 +108,18 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
     }
   }
 
+  Future<void> _openPlaceForm({PlaceModel? place, required PlaceFormMode mode}) async {
+    final changed = await Navigator.push<bool?>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminPlaceFormScreen(mode: mode, place: place),
+      ),
+    );
+    if (changed == true) {
+      await _loadData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -123,7 +136,7 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => _openPlaceForm(mode: PlaceFormMode.create),
         backgroundColor: AppTheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -212,7 +225,7 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
                                 place: place,
                                 category: cat,
                                 onDelete: () => _deletePlace(place.id),
-                                onEdit: () {},
+                                onEdit: () => _openPlaceForm(place: place, mode: PlaceFormMode.edit),
                               );
                             },
                           ),

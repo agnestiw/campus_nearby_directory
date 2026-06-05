@@ -160,4 +160,76 @@ class PlaceService {
       rethrow;
     }
   }
+
+  Future<PlaceModel> createPlace(PlaceModel place) async {
+    try {
+      AppLogger.info('Creating place: ${place.name}');
+      final response = await _supabase.from('places').insert({
+        'name': place.name,
+        'address': place.address,
+        'latitude': place.latitude,
+        'longitude': place.longitude,
+        'category_id': place.categoryId,
+        'open_hour': place.openHour,
+        'description': place.description,
+        'photo_url': place.photoUrl,
+        'rating': place.rating,
+        'phone': place.phone,
+        'website': place.website,
+      }).select().single();
+      return PlaceModel.fromJson(response as Map<String, dynamic>);
+    } catch (e) {
+      AppLogger.error('Error creating place: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updatePlace(PlaceModel place) async {
+    try {
+      AppLogger.info('Updating place ${place.id}');
+      await _supabase.from('places').update({
+        'name': place.name,
+        'address': place.address,
+        'latitude': place.latitude,
+        'longitude': place.longitude,
+        'category_id': place.categoryId,
+        'open_hour': place.openHour,
+        'description': place.description,
+        'photo_url': place.photoUrl,
+        'rating': place.rating,
+        'phone': place.phone,
+        'website': place.website,
+      }).eq('id', place.id);
+    } catch (e) {
+      AppLogger.error('Error updating place: $e');
+      rethrow;
+    }
+  }
+
+  Future<int> countPlaces() async {
+    try {
+      final response = await _supabase.from('places').select('id');
+      if (response is List) return response.length;
+      return 0;
+    } catch (e) {
+      AppLogger.error('Error counting places: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<PlaceModel>> getRecentPlaces({int limit = 3}) async {
+    try {
+      final response = await _supabase
+          .from('places')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (response as List)
+          .map((e) => PlaceModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      AppLogger.error('Error fetching recent places: $e');
+      return [];
+    }
+  }
 }
