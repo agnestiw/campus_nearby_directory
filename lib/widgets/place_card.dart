@@ -40,7 +40,7 @@ class PlaceCard extends StatelessWidget {
       },
       child: Container(
         height: 135,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -213,7 +213,7 @@ class PlaceCard extends StatelessWidget {
                     // To match picture: solid heart if favorite, otherwise bordered
                     isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                     size: 18,
-                    color: isFavorite ? const Color(0xFFEF4444) : const Color(0xFF1A1A2E),
+                    color: isFavorite ? const Color(0xFFD4FF59) : const Color(0xFF1A1A2E),
                   ),
                 ),
               ),

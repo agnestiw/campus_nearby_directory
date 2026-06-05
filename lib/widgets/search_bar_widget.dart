@@ -5,6 +5,7 @@ class SearchBarWidget extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback? onClear;
   final VoidCallback? onFilterTap;
+  final TextEditingController? controller;
 
   const SearchBarWidget({
     super.key,
@@ -12,6 +13,7 @@ class SearchBarWidget extends StatefulWidget {
     required this.onChanged,
     this.onClear,
     this.onFilterTap,
+    this.controller,
   });
 
   @override
@@ -27,6 +29,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     super.initState();
     _controller.addListener(() {
       setState(() => _hasText = _controller.text.isNotEmpty);
+      widget.onChanged(_controller.text);
     });
   }
 

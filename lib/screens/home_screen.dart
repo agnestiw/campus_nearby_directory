@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/category_model.dart';
@@ -12,8 +13,6 @@ import '../services/favorites_service.dart';
 import '../utils/distance_helper.dart';
 import '../widgets/error_state_widget.dart';
 import '../widgets/place_card.dart';
-import '../widgets/search_bar_widget.dart';
-import '../core/app_theme.dart';
 import 'place_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,12 +43,15 @@ class _HomeScreenState extends State<HomeScreen> {
   late PageController _pageController;
   Timer? _carouselTimer;
   int _currentCarouselIndex = 0;
+  
+  late TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
 
     _pageController = PageController();
+    _searchController = TextEditingController();
     _startCarousel();
 
     _favService.loadFavorites();
@@ -62,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _carouselTimer?.cancel();
     _pageController.dispose();
+    _searchController.dispose();
     _favService.favorites.removeListener(_onFavoritesChanged);
     super.dispose();
   }
@@ -148,10 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void _applyFilter() {
     List<PlaceModel> filtered = _allPlaces;
 
+    // Filter by category
     if (_selectedCategoryId != null) {
       filtered = filtered.where((p) => p.categoryId == _selectedCategoryId).toList();
     }
 
+    // Filter by search keyword
     if (_searchKeyword.isNotEmpty) {
       final kw = _searchKeyword.toLowerCase();
       filtered = filtered.where((p) {
@@ -162,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
 
+    // Sort by distance if location available
     if (_currentPosition != null) {
       filtered.sort((a, b) {
         final distA = DistanceHelper.calculateDistance(
@@ -197,146 +203,215 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F172A), // Dark Slate
-              Color(0xFF3B82F6), // Vibrant Blue
-            ],
+      backgroundColor: const Color(0xFFFAFAFC),
+      body: Stack(
+        children: [
+          // Background Abstract Shapes (like Categories Screen)
+          Positioned(
+            top: -60,
+            left: -40,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8EEFD),
+                shape: BoxShape.circle,
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 20,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
+          Positioned(
+            top: 50,
+            right: 0,
+            child: CustomPaint(
+              size: const Size(120, 150),
+              painter: CurvePainter(),
+            ),
+          ),
+          
+          // Main Content
+          SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                // ── Header ──────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        Text(
+                          'Beranda',
+                          style: GoogleFonts.poppins(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0B132B),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Temukan tempat dan layanan terdekat',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFF0B132B).withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                    child: CustomScrollView(
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 24),
-                              // ── Search ───────────────────────────────
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(50),
+                ),
+                
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                // ── Search Bar ──────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchKeyword = value;
+                          });
+                          _applyFilter();
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Cari cafe, fotokopi, ATM...',
+                          hintStyle: GoogleFonts.poppins(
+                            color: const Color(0xFF9CA3AF),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.only(left: 20, right: 12),
+                            child: Icon(Icons.search, color: Color(0xFF1A6FDB), size: 22),
+                          ),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 50),
+                          suffixIcon: _searchKeyword.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchKeyword = '';
+                                    });
+                                    _applyFilter();
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.only(right: 16),
+                                    child: Icon(Icons.close_rounded, color: Color(0xFF9CA3AF), size: 18),
                                   ),
-                                  child: SearchBarWidget(
-                                    hint: 'Cari cafe, fotokopi, ATM...',
-                                    onChanged: (value) {
-                                      _searchKeyword = value;
-                                      _applyFilter();
-                                    },
-                                    onFilterTap: () {
-                                      _showFilterBottomSheet();
-                                    },
-                                  ),
-                                ),
-                              ),
-                              
-                              const SizedBox(height: 20),
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
-                            // ── Spot of the Day ────────────────────
-                            if (!_isLoading && _searchKeyword.isEmpty && _selectedCategoryId == null)
-                              _buildSpotCarousel(),
-
-                            if (!_isLoading && _searchKeyword.isEmpty && _selectedCategoryId == null)
-                              const SizedBox(height: 32),
-
-                            // ── Rekomendasi Terdekat ────────────────
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _searchKeyword.isEmpty ? 'Rekomendasi Terdekat' : 'Hasil Pencarian',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A1A2E),
-                                    ),
-                                  ),
-
-                                ],
+                // Show active filter indicator
+                if (_selectedCategoryId != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4FF59).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFD4FF59), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.filter_alt_rounded, color: Color(0xFF1A6FDB), size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Filter: ${_categoryMap[_selectedCategoryId]}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1A6FDB),
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategoryId = null;
+                                });
+                                _applyFilter();
+                              },
+                              child: const Icon(Icons.close_rounded, color: Color(0xFF1A6FDB), size: 14),
+                            ),
                           ],
                         ),
                       ),
+                    ),
+                  ),
 
-                      // ── Content ──────────────────────────────
-                      _buildContent(),
-                    ],
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+                // ── Spot of the Day ────────────────────
+                if (!_isLoading && _searchKeyword.isEmpty && _selectedCategoryId == null)
+                  SliverToBoxAdapter(child: _buildSpotCarousel()),
+
+                if (!_isLoading && _searchKeyword.isEmpty && _selectedCategoryId == null)
+                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+
+                // ── Section Title ────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      _searchKeyword.isEmpty && _selectedCategoryId == null
+                          ? 'Rekomendasi Terdekat'
+                          : 'Hasil Pencarian',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0B132B),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      ),
-    );
-  }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on,
-                color: Colors.white,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Campus Nearby',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications_none_rounded,
-              color: Color(0xFF1A1A2E),
-              size: 22,
+                const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+                // ── Content ──────────────────────────────
+                _buildContent(),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
             ),
           ),
         ],
@@ -348,93 +423,55 @@ class _HomeScreenState extends State<HomeScreen> {
     final spots = _spotOfTheDayPlaces;
     if (spots.isEmpty) return const SizedBox();
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 240,
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentCarouselIndex = index;
-              });
-            },
-            itemCount: spots.length,
-            itemBuilder: (context, index) {
-              return _buildSpotCard(spots[index]);
-            },
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Spot Unggulan',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0B132B),
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(spots.length, (index) {
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _currentCarouselIndex == index ? 24 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: _currentCarouselIndex == index ? const Color(0xFF3B82F6) : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Filter Kategori", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('Semua'),
-                          selected: _selectedCategoryId == null,
-                          onSelected: (val) {
-                            setState(() => _selectedCategoryId = null);
-                            setModalState(() {});
-                            _applyFilter();
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ..._categories.map((cat) => ChoiceChip(
-                          label: Text(cat.name),
-                          selected: _selectedCategoryId == cat.id,
-                          onSelected: (val) {
-                            setState(() => _selectedCategoryId = cat.id);
-                            setModalState(() {});
-                            _applyFilter();
-                            Navigator.pop(context);
-                          },
-                        )).toList(),
-                      ],
-                    ),
-                  ],
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 240,
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentCarouselIndex = index;
+                });
+              },
+              itemCount: spots.length,
+              itemBuilder: (context, index) {
+                return _buildSpotCard(spots[index]);
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(spots.length, (index) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: _currentCarouselIndex == index ? 24 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _currentCarouselIndex == index
+                      ? const Color(0xFF1A6FDB)
+                      : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-              ),
-            );
-          }
-        );
-      }
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 
@@ -452,102 +489,161 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        height: 240,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           image: DecorationImage(
             image: CachedNetworkImageProvider(place.photoUrl ?? ''),
             fit: BoxFit.cover,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 20,
               offset: const Offset(0, 8),
             )
           ]
         ),
         child: Stack(
           children: [
+            // Gradient overlay
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.8),
+                    Colors.black.withOpacity(0.15),
+                    Colors.black.withOpacity(0.85),
                   ],
                 ),
               ),
             ),
+            
             // TOP BADGES
             Positioned(
-              top: 16,
-              left: 16,
+              top: 12,
+              left: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.stars_rounded, color: Color(0xFF8B5CF6), size: 16),
-                    SizedBox(width: 6),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star_rounded, color: Color(0xFF1A6FDB), size: 14),
+                    const SizedBox(width: 4),
                     Text(
-                      'SPOT OF THE DAY',
-                      style: TextStyle(
-                        color: Color(0xFF8B5CF6),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 10,
-                        letterSpacing: 0.5,
+                      'Unggulan',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF1A6FDB),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+            
+            // Favorite button
             Positioned(
-              top: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.favorite_border_rounded,
-                  color: Color(0xFF1A1A2E),
-                  size: 18,
+              top: 12,
+              right: 12,
+              child: GestureDetector(
+                onTap: () async {
+                  await _favService.toggleFavorite(place.id);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                      )
+                    ]
+                  ),
+                  child: Icon(
+                    place.isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: const Color(0xFFE53E3E),
+                    size: 18,
+                  ),
                 ),
               ),
             ),
+            
             // BOTTOM CONTENT
             Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.1),
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Category badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4FF59),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _categoryMap[place.categoryId] ?? 'Kategori',
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF0B132B),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 8),
+                    
+                    // Place name
+                    Text(
+                      place.name,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    const SizedBox(height: 6),
+                    
+                    // Rating
+                    Row(
                       children: [
-                        const Icon(Icons.local_cafe_rounded, color: Colors.white, size: 12),
-                        const SizedBox(width: 6),
+                        const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                        const SizedBox(width: 3),
                         Text(
-                          _categoryMap[place.categoryId] ?? 'Kategori',
-                          style: const TextStyle(
+                          '${place.rating?.toStringAsFixed(1) ?? '0.0'}',
+                          style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -555,79 +651,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    place.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${place.rating ?? 0.0} (230 review)',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, color: Colors.white, size: 16),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                place.address,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: const [
-                            Text(
-                              'Lihat Detail',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 14),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -669,22 +694,49 @@ class _HomeScreenState extends State<HomeScreen> {
     // Since Spot of the Day is now a top 3 rated carousel separate from the list, we show all filteredPlaces in Rekomendasi
     final listPlaces = _filteredPlaces;
 
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final place = listPlaces[index];
-          return PlaceCard(
-            place: place,
-            categoryName: _categoryMap[place.categoryId],
-            distanceText: _getDistance(place),
-            isFavorite: place.isFavorite,
-            onFavoriteToggle: () async {
-              await _favService.toggleFavorite(place.id);
-            },
-          );
-        },
-        childCount: listPlaces.length,
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final place = listPlaces[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: PlaceCard(
+                place: place,
+                categoryName: _categoryMap[place.categoryId],
+                distanceText: _getDistance(place),
+                isFavorite: place.isFavorite,
+                onFavoriteToggle: () async {
+                  await _favService.toggleFavorite(place.id);
+                },
+              ),
+            );
+          },
+          childCount: listPlaces.length,
+        ),
       ),
     );
   }
+}
+
+class CurvePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    var paint = Paint()
+      ..color = const Color(0xFFE8EEFD)
+      ..style = PaintingStyle.fill;
+
+    var path = Path();
+    path.moveTo(0, 0);
+    path.quadraticBezierTo(size.width * 0.5, size.height * 0.2, size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CurvePainter oldDelegate) => false;
 }

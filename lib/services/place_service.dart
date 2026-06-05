@@ -26,8 +26,7 @@ class PlaceService {
           .map((e) => PlaceModel.fromJson(e))
           .toList();
 
-      // mark favorites
-      await _favService.loadFavorites();
+      // mark favorites (already loaded in main screen)
       final favs = _favService.favorites.value;
       for (var p in places) {
         p.isFavorite = favs.contains(p.id);
@@ -80,7 +79,6 @@ class PlaceService {
       final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
-      await _favService.loadFavorites();
       final favs = _favService.favorites.value;
       for (var p in places) p.isFavorite = favs.contains(p.id);
       return places;
@@ -108,7 +106,6 @@ class PlaceService {
       final places = (response as List)
           .map((e) => PlaceModel.fromJson(e))
           .toList();
-      await _favService.loadFavorites();
       final favs = _favService.favorites.value;
       for (var p in places) p.isFavorite = favs.contains(p.id);
       return places;
