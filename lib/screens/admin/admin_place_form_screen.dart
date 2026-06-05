@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../models/place_model.dart';
 import '../../models/category_model.dart';
 import '../../services/category_service.dart';
@@ -87,7 +87,9 @@ class _AdminPlaceFormScreenState extends State<AdminPlaceFormScreen> {
     if (_isViewOnly) return;
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih kategori terlebih dahulu')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih kategori terlebih dahulu'), behavior: SnackBarBehavior.floating),
+      );
       return;
     }
     setState(() {
@@ -123,10 +125,11 @@ class _AdminPlaceFormScreenState extends State<AdminPlaceFormScreen> {
         _error = e.toString();
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -145,6 +148,38 @@ class _AdminPlaceFormScreenState extends State<AdminPlaceFormScreen> {
     super.dispose();
   }
 
+  InputDecoration _inputDeco(String label, ThemeData theme) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF64748B)),
+      hintStyle: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF9CA3AF)),
+      filled: true,
+      fillColor: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: theme.brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1.5,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(
+          color: theme.brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1.5,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(
+          color: Color(0xFF1A6FDB),
+          width: 2.0,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -155,67 +190,117 @@ class _AdminPlaceFormScreenState extends State<AdminPlaceFormScreen> {
             : 'Ubah Tempat';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
-      ),
       backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(MediaQuery.of(context).padding.top + 60),
+        child: Container(
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, bottom: 12, left: 16, right: 16),
+          decoration: BoxDecoration(
+            color: theme.brightness == Brightness.dark ? const Color(0xFF0F172A) : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFE8EEFD),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: _categories.isEmpty
             ? _error != null
-                ? Center(child: Text(_error!, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)))
+                ? Center(child: Text(_error!, style: GoogleFonts.poppins(color: theme.colorScheme.error, fontSize: 14)))
                 : const Center(child: CircularProgressIndicator())
             : Form(
                 key: _formKey,
                 child: ListView(
+                  padding: const EdgeInsets.only(bottom: 40),
                   children: [
+                    const SizedBox(height: 10),
                     TextFormField(
                       controller: _nameController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Nama Tempat'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Nama Tempat *', theme),
                       validator: (value) => value == null || value.trim().isEmpty ? 'Nama tidak boleh kosong' : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _addressController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Alamat'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Alamat', theme),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: TextFormField(
                             controller: _latitudeController,
                             enabled: !_isViewOnly,
-                            decoration: const InputDecoration(labelText: 'Latitude'),
+                            style: GoogleFonts.poppins(fontSize: 14),
+                            decoration: _inputDeco('Latitude *', theme),
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Latitude wajib diisi';
+                                return 'Latitude wajib';
                               }
                               if (double.tryParse(value.trim()) == null) {
-                                return 'Latitude tidak valid';
+                                return 'Tidak valid';
                               }
                               return null;
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: TextFormField(
                             controller: _longitudeController,
                             enabled: !_isViewOnly,
-                            decoration: const InputDecoration(labelText: 'Longitude'),
+                            style: GoogleFonts.poppins(fontSize: 14),
+                            decoration: _inputDeco('Longitude *', theme),
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Longitude wajib diisi';
+                                return 'Longitude wajib';
                               }
                               if (double.tryParse(value.trim()) == null) {
-                                return 'Longitude tidak valid';
+                                return 'Tidak valid';
                               }
                               return null;
                             },
@@ -223,69 +308,91 @@ class _AdminPlaceFormScreenState extends State<AdminPlaceFormScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       value: _selectedCategoryId,
+                      style: GoogleFonts.poppins(fontSize: 14, color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B)),
                       items: _categories
                           .map(
                             (category) => DropdownMenuItem(
                               value: category.id,
-                              child: Text(category.name),
+                              child: Text(category.name[0].toUpperCase() + category.name.substring(1)),
                             ),
                           )
                           .toList(),
                       onChanged: _isViewOnly ? null : (value) => setState(() => _selectedCategoryId = value),
-                      decoration: const InputDecoration(labelText: 'Kategori'),
+                      decoration: _inputDeco('Kategori *', theme),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _openHourController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Jam Buka'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Jam Buka', theme),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _descriptionController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Deskripsi'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Deskripsi', theme),
                       maxLines: 3,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _photoUrlController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'URL Foto'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('URL Foto', theme),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _ratingController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Rating'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Rating', theme),
                       keyboardType: TextInputType.number,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _phoneController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Telepon'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Telepon', theme),
                       keyboardType: TextInputType.phone,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _websiteController,
                       enabled: !_isViewOnly,
-                      decoration: const InputDecoration(labelText: 'Website'),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                      decoration: _inputDeco('Website', theme),
                       keyboardType: TextInputType.url,
                     ),
                     const SizedBox(height: 24),
                     if (_error != null)
-                      Text(_error!, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(_error!, style: GoogleFonts.poppins(color: theme.colorScheme.error, fontSize: 13, fontWeight: FontWeight.w500)),
+                      ),
                     if (!_isViewOnly)
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _savePlace,
-                        child: _isLoading
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Text('Simpan'),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _savePlace,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A6FDB),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Text('Simpan', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold)),
+                        ),
                       ),
                   ],
                 ),

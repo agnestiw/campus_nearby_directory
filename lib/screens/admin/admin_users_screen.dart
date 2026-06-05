@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/app_theme.dart';
 import '../../models/profile_model.dart';
 import '../../services/user_service.dart';
@@ -58,13 +59,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus User'),
-        content: const Text('Apakah Anda yakin ingin menghapus user ini?'),
+        title: Text('Hapus User', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Apakah Anda yakin ingin menghapus user ini?', style: GoogleFonts.poppins()),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Batal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus', style: TextStyle(color: AppTheme.danger)),
+            child: Text('Hapus', style: GoogleFonts.poppins(color: AppTheme.danger, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -78,11 +82,21 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       }
       await _loadUsers();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User berhasil dihapus')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User berhasil dihapus', style: GoogleFonts.poppins()),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal menghapus user: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus user: $e', style: GoogleFonts.poppins()),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -104,48 +118,128 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text('Kelola User', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(MediaQuery.of(context).padding.top + 60),
+        child: Container(
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, bottom: 12, left: 16, right: 16),
+          decoration: BoxDecoration(
+            color: theme.brightness == Brightness.dark ? const Color(0xFF0F172A) : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFE8EEFD),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Kelola User',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openForm(mode: UserFormMode.create),
         backgroundColor: AppTheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         children: [
+          // ── Search Bar ──────────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              border: Border(bottom: BorderSide(color: theme.dividerColor)),
-            ),
-            child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Cari nama atau email...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor: theme.inputDecorationTheme.fillColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+              color: theme.brightness == Brightness.dark ? const Color(0xFF0F172A) : Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFE8EEFD),
+                  width: 1.5,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: GoogleFonts.poppins(fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Cari nama atau email...',
+                  hintStyle: GoogleFonts.poppins(
+                    color: const Color(0xFF9CA3AF),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF1A6FDB), size: 22),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           ),
+
+          // ── User List ───────────────────────────────────────────────────
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
                     ? ErrorStateWidget(type: ErrorType.network, onRetry: _loadUsers)
                     : _filteredUsers.isEmpty
-                        ? Center(child: Text('Tidak ada user ditemukan', style: theme.textTheme.bodyMedium))
+                        ? Center(child: Text('Tidak ada user ditemukan', style: GoogleFonts.poppins(fontSize: 15, color: const Color(0xFF64748B))))
                         : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(20),
                             itemCount: _filteredUsers.length,
                             itemBuilder: (_, index) {
                               final user = _filteredUsers[index];
@@ -184,24 +278,49 @@ class _UserCard extends StatelessWidget {
     final initial = user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFF1F5F9),
+          width: 1.5,
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3)),
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            backgroundColor: AppTheme.primaryLight,
-            radius: 22,
-            child: Text(initial, style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 16)),
+          // User Avatar with premium circle details
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryLight,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: theme.brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE8EEFD),
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: GoogleFonts.poppins(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
+          // Info Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,33 +328,90 @@ class _UserCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(user.fullName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis, maxLines: 1),
+                      child: Text(
+                        user.fullName,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                     if (isAdmin)
                       Container(
-                        margin: const EdgeInsets.only(left: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-                        child: const Text('Admin', style: TextStyle(color: AppTheme.primary, fontSize: 10, fontWeight: FontWeight.w700)),
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Admin',
+                          style: GoogleFonts.poppins(
+                            color: AppTheme.primary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  user.email,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: const Color(0xFF64748B),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
                 const SizedBox(height: 6),
-                Text(user.email, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis, maxLines: 1),
-                const SizedBox(height: 8),
-                Text('Role: ${user.roleName}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: (theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Role: ${user.roleName[0].toUpperCase()}${user.roleName.substring(1)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 8),
+          // Actions Stacked Vertically
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _CardActionButton(icon: Icons.visibility_rounded, color: AppTheme.primary, onTap: onView, tooltip: 'Lihat'),
+              _CardActionButton(
+                icon: Icons.visibility_rounded,
+                color: AppTheme.primary,
+                onTap: onView,
+                tooltip: 'Lihat',
+              ),
               const SizedBox(height: 6),
-              _CardActionButton(icon: Icons.edit_rounded, color: AppTheme.primary, onTap: onEdit, tooltip: 'Ubah'),
+              _CardActionButton(
+                icon: Icons.edit_rounded,
+                color: AppTheme.primary,
+                onTap: onEdit,
+                tooltip: 'Ubah',
+              ),
               const SizedBox(height: 6),
-              _CardActionButton(icon: Icons.delete_rounded, color: AppTheme.danger, onTap: onDelete, tooltip: 'Hapus'),
+              _CardActionButton(
+                icon: Icons.delete_rounded,
+                color: AppTheme.danger,
+                onTap: onDelete,
+                tooltip: 'Hapus',
+              ),
             ],
           ),
         ],
@@ -258,11 +434,14 @@ class _CardActionButton extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 18, color: color),
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 16, color: color),
         ),
       ),
     );

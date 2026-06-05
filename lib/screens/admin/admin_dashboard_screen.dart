@@ -104,7 +104,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Semua warna diambil dari theme — tidak ada hardcoded color di build()
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -115,73 +114,100 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ? const Center(child: CircularProgressIndicator())
             : _error != null
                 ? ErrorStateWidget(type: ErrorType.network, onRetry: _loadDashboardData)
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Header ──────────────────────────────────────────────────
-              _buildHeader(theme, colorScheme),
-              const SizedBox(height: 18),
+                : Stack(
+                    children: [
+                      // Background Abstract Shapes
+                      Positioned(
+                        top: -60,
+                        left: -40,
+                        child: Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            color: theme.brightness == Brightness.dark
+                                ? const Color(0xFF1E293B).withOpacity(0.3)
+                                : const Color(0xFFE8EEFD),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 50,
+                        right: 0,
+                        child: CustomPaint(
+                          size: const Size(120, 150),
+                          painter: CurvePainter(),
+                        ),
+                      ),
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── Header ──────────────────────────────────────────────────
+                            _buildHeader(theme, colorScheme),
+                            const SizedBox(height: 20),
 
-              // ── Welcome Banner ───────────────────────────────────────────
-              _buildWelcomeBanner(theme),
-              const SizedBox(height: 24),
+                            // ── Welcome Banner ───────────────────────────────────────────
+                            _buildWelcomeBanner(theme),
+                            const SizedBox(height: 24),
 
-              // ── Statistik ────────────────────────────────────────────────
-              _buildSectionLabel(theme, 'Statistik', 'Ringkasan'),
-              const SizedBox(height: 12),
-              _buildStatsGrid(theme, colorScheme),
-              const SizedBox(height: 24),
+                            // ── Statistik ────────────────────────────────────────────────
+                            _buildSectionLabel(theme, 'Statistik', 'Ringkasan'),
+                            const SizedBox(height: 12),
+                            _buildStatsGrid(theme, colorScheme),
+                            const SizedBox(height: 24),
 
-              // ── Menu Utama ───────────────────────────────────────────────
-              _buildSectionLabel(theme, 'Menu Utama', null),
-              const SizedBox(height: 12),
-                _buildMenuCard(
-                  theme: theme,
-                  title: 'Kelola User',
-                  subtitle: 'Kelola akun & hak akses pengguna',
-                  icon: Icons.people_alt_rounded,
-                  accentColor: colorScheme.primary,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
-                  ).then((_) => _loadDashboardData()),
-                ),
-              const SizedBox(height: 12),
-                _buildMenuCard(
-                  theme: theme,
-                  title: 'Kelola Tempat',
-                  subtitle: 'Data tempat wisata & lokasi kampus',
-                  icon: Icons.place_rounded,
-                  accentColor: colorScheme.secondary,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AdminPlacesScreen()),
-                  ).then((_) => _loadDashboardData()),
-                ),
-              const SizedBox(height: 12),
-                _buildMenuCard(
-                  theme: theme,
-                  title: 'Kelola Kategori',
-                  subtitle: 'Manajemen kategori tempat',
-                  icon: Icons.category_rounded,
-                  accentColor: AppTheme.warning,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AdminCategoriesScreen()),
-                  ).then((_) => _loadDashboardData()),
-                ),
-              const SizedBox(height: 24),
+                            // ── Menu Utama ───────────────────────────────────────────────
+                            _buildSectionLabel(theme, 'Menu Utama', null),
+                            const SizedBox(height: 12),
+                            _buildMenuCard(
+                              theme: theme,
+                              title: 'Kelola User',
+                              subtitle: 'Kelola akun & hak akses pengguna',
+                              icon: Icons.people_alt_rounded,
+                              accentColor: colorScheme.primary,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
+                              ).then((_) => _loadDashboardData()),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildMenuCard(
+                              theme: theme,
+                              title: 'Kelola Tempat',
+                              subtitle: 'Data tempat wisata & lokasi kampus',
+                              icon: Icons.place_rounded,
+                              accentColor: colorScheme.secondary,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AdminPlacesScreen()),
+                              ).then((_) => _loadDashboardData()),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildMenuCard(
+                              theme: theme,
+                              title: 'Kelola Kategori',
+                              subtitle: 'Manajemen kategori tempat',
+                              icon: Icons.category_rounded,
+                              accentColor: AppTheme.warning,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AdminCategoriesScreen()),
+                              ).then((_) => _loadDashboardData()),
+                            ),
+                            const SizedBox(height: 24),
 
-              // ── Aktivitas Terbaru ────────────────────────────────────────
-              _buildSectionLabel(theme, 'Aktivitas Terbaru', null),
-              const SizedBox(height: 12),
-              _buildRecentActivity(theme, colorScheme),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
+                            // ── Aktivitas Terbaru ────────────────────────────────────────
+                            _buildSectionLabel(theme, 'Aktivitas Terbaru', null),
+                            const SizedBox(height: 12),
+                            _buildRecentActivity(theme, colorScheme),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
       ),
     );
   }
@@ -193,30 +219,73 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            'Dashboard Admin',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Dashboard Admin',
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Kelola direktori tempat dan user kampus',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ],
           ),
         ),
         // Toggle dark/light
-        IconButton(
-          tooltip: theme.brightness == Brightness.dark ? 'Mode Terang' : 'Mode Gelap',
-          icon: Icon(
-            theme.brightness == Brightness.dark
-                ? Icons.light_mode_rounded
-                : Icons.dark_mode_rounded,
-            color: theme.colorScheme.onSurfaceVariant,
+        Container(
+          decoration: BoxDecoration(
+            color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          onPressed: _toggleTheme,
+          child: IconButton(
+            tooltip: theme.brightness == Brightness.dark ? 'Mode Terang' : 'Mode Gelap',
+            icon: Icon(
+              theme.brightness == Brightness.dark
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: theme.brightness == Brightness.dark ? const Color(0xFFD4FF59) : const Color(0xFF1A6FDB),
+            ),
+            onPressed: _toggleTheme,
+          ),
         ),
+        const SizedBox(width: 8),
         // Logout
-        IconButton(
-          tooltip: 'Keluar',
-          icon: Icon(Icons.logout_rounded, color: cs.error),
-          onPressed: _logout,
+        Container(
+          decoration: BoxDecoration(
+            color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: IconButton(
+            tooltip: 'Keluar',
+            icon: Icon(Icons.logout_rounded, color: cs.error),
+            onPressed: _logout,
+          ),
         ),
       ],
     );
@@ -228,22 +297,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildWelcomeBanner(ThemeData theme) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withOpacity(0.80),
+            Color(0xFF0F172A), // Dark Slate
+            Color(0xFF1A6FDB), // Vibrant Blue
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.25),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF1A6FDB).withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -255,16 +324,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               children: [
                 Text(
                   'Selamat Datang Kembali 👋',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
+                    fontSize: 18,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Admin • Campus Nearby',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.85),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
@@ -273,7 +345,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -296,17 +368,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         Expanded(
           child: Text(
             title,
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: GoogleFonts.poppins(
+              fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
+              color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
             ),
           ),
         ),
         if (trailing != null)
           Text(
             trailing,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
             ),
           ),
       ],
@@ -314,7 +389,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Stats Grid  (2 kolom, tinggi mengikuti konten via aspectRatio)
+  // Stats Grid
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildStatsGrid(ThemeData theme, ColorScheme cs) {
     final stats = [
@@ -332,7 +407,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        // Rasio 1.1 → card tidak terlalu tinggi, cukup muat isi konten
         childAspectRatio: 1.1,
       ),
       itemBuilder: (_, i) => _buildStatCard(theme, stats[i]),
@@ -342,16 +416,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildStatCard(ThemeData theme, _StatItem item) {
     final isPositive = item.change.contains('↑');
     final changeColor = isPositive
-        ? const Color(0xFF22C55E) // green-500 — bisa ganti dengan cs.secondary jika cocok
+        ? const Color(0xFF22C55E)
         : theme.colorScheme.error;
 
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFE8EEFD),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.06),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -367,7 +447,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: item.color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(item.icon, size: 22, color: item.color),
           ),
@@ -376,38 +456,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Text(
             item.value,
             style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
             ),
           ),
           const SizedBox(height: 2),
           // Title
           Text(
             item.title,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 6),
-          // Change badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: changeColor.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              item.change,
-              style: TextStyle(
-                color: changeColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
+          if (item.change.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: changeColor.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                item.change,
+                style: TextStyle(
+                  color: changeColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -427,12 +510,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFE8EEFD),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -440,37 +529,67 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(24),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
+                // Left Icon Container (bordered + dual gradient shader mask)
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.brightness == Brightness.dark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE8EEFD),
+                      width: 1.5,
+                    ),
                   ),
-                  child: Icon(icon, size: 26, color: accentColor),
+                  child: Center(
+                    child: ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFD4FF59),
+                            Color(0xFFD4FF59),
+                            Color(0xFF1A6FDB),
+                            Color(0xFF1A6FDB)
+                          ],
+                          stops: [0.0, 0.35, 0.35, 1.0],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.srcIn,
+                      child: Icon(icon, color: Colors.white, size: 28),
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
+                // Center details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
+                          color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.4,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF64748B),
+                          height: 1.3,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -479,10 +598,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
+                // Right Arrow Action Button (lime-green round)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD4FF59),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Color(0xFF0B132B),
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -524,7 +652,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       activityTiles.add(
         Padding(
           padding: const EdgeInsets.all(18),
-          child: Text('Belum ada aktivitas terbaru', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          child: Text('Belum ada aktivitas terbaru', style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF64748B))),
         ),
       );
     }
@@ -532,22 +660,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFE8EEFD),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          for (var i = 0; i < activityTiles.length; i++) ...[
-            activityTiles[i],
-            if (i < activityTiles.length - 1) Divider(height: 1, color: theme.dividerColor),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: [
+            for (var i = 0; i < activityTiles.length; i++) ...[
+              activityTiles[i],
+              if (i < activityTiles.length - 1) Divider(height: 1, color: theme.dividerColor),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -564,39 +701,71 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: CircleAvatar(
-        backgroundColor: avatarColor,
+        backgroundColor: avatarColor.withOpacity(0.12),
         radius: 20,
-        child: Icon(icon, color: Colors.white, size: 18),
+        child: Icon(icon, color: avatarColor, size: 18),
       ),
       title: Text(
         title,
-        style: theme.textTheme.bodyMedium?.copyWith(
+        style: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onSurface,
+          fontSize: 14,
+          color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          color: const Color(0xFF64748B),
         ),
       ),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: badgeColor,
+          color: badgeColor.withOpacity(0.12),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           badge,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: badgeColor,
             fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Curve Painter untuk ornamen lengkungan neon
+// ─────────────────────────────────────────────────────────────────────────────
+class CurvePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    var paint = Paint()
+      ..color = const Color(0xFFD4FF59)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    var path = Path();
+    
+    // Start with a small circle
+    canvas.drawCircle(const Offset(20, 20), 8, paint..style = PaintingStyle.fill);
+    
+    // Draw the curve
+    paint.style = PaintingStyle.stroke;
+    path.moveTo(20, 20);
+    path.quadraticBezierTo(size.width * 0.7, 10, size.width, size.height);
+    
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return false;
   }
 }
 

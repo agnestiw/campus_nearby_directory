@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/place_model.dart';
 import '../../models/category_model.dart';
@@ -62,7 +63,7 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
       final q = _searchQuery.toLowerCase();
       final matchesSearch =
           place.name.toLowerCase().contains(q) ||
-          (place.address?.toLowerCase().contains(q) ?? false);
+          (place.address.toLowerCase().contains(q));
       final matchesCategory =
           _selectedCategoryId == null || place.categoryId == _selectedCategoryId;
       return matchesSearch && matchesCategory;
@@ -73,17 +74,16 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Tempat'),
-        content: const Text('Apakah Anda yakin ingin menghapus tempat ini?'),
+        title: Text('Hapus Tempat', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Apakah Anda yakin ingin menghapus tempat ini?', style: GoogleFonts.poppins()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
+            child: Text('Batal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus',
-                style: TextStyle(color: AppTheme.danger)),
+            child: Text('Hapus', style: GoogleFonts.poppins(color: AppTheme.danger, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -96,13 +96,19 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
       await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Tempat berhasil dihapus')),
+          SnackBar(
+            content: Text('✅ Tempat berhasil dihapus', style: GoogleFonts.poppins()),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Gagal menghapus: $e')),
+          SnackBar(
+            content: Text('❌ Gagal menghapus: $e', style: GoogleFonts.poppins()),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -126,48 +132,122 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Kelola Tempat',
-          style: theme.textTheme.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w600),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(MediaQuery.of(context).padding.top + 60),
+        child: Container(
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, bottom: 12, left: 16, right: 16),
+          decoration: BoxDecoration(
+            color: theme.brightness == Brightness.dark ? const Color(0xFF0F172A) : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFE8EEFD),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Kelola Tempat',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w700,
+                  color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
         ),
-        backgroundColor: theme.appBarTheme.backgroundColor,
-        elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openPlaceForm(mode: PlaceFormMode.create),
         backgroundColor: AppTheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         children: [
           // ── Search & Filter ────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: theme.cardColor,
-              border: Border(bottom: BorderSide(color: theme.dividerColor)),
+              color: theme.brightness == Brightness.dark ? const Color(0xFF0F172A) : Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFE8EEFD),
+                  width: 1.5,
+                ),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                  decoration: InputDecoration(
-                    hintText: 'Cari nama atau alamat...',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    filled: true,
-                    fillColor: theme.inputDecorationTheme.fillColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                // Oval Search Bar with shadow
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    style: GoogleFonts.poppins(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama atau alamat...',
+                      hintStyle: GoogleFonts.poppins(
+                        color: const Color(0xFF9CA3AF),
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF1A6FDB), size: 22),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
                 if (_categories.isNotEmpty) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -181,7 +261,7 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
                         ..._categories.map((cat) => Padding(
                               padding: const EdgeInsets.only(left: 8),
                               child: _chip(
-                                label: cat.name,
+                                label: cat.name[0].toUpperCase() + cat.name.substring(1),
                                 selected: _selectedCategoryId == cat.id,
                                 onTap: () => setState(() {
                                   _selectedCategoryId =
@@ -209,10 +289,10 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
                     : _filteredPlaces.isEmpty
                         ? Center(
                             child: Text('Tidak ada data',
-                                style: theme.textTheme.bodyMedium),
+                                style: GoogleFonts.poppins(fontSize: 15, color: const Color(0xFF64748B))),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(20),
                             itemCount: _filteredPlaces.length,
                             itemBuilder: (_, i) {
                               final place = _filteredPlaces[i];
@@ -240,23 +320,32 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
     required bool selected,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: selected
-              ? AppTheme.primary
-              : Theme.of(context).inputDecorationTheme.fillColor,
+              ? const Color(0xFF1A6FDB)
+              : (theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? const Color(0xFF1A6FDB)
+                : (theme.brightness == Brightness.dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            width: 1.5,
+          ),
         ),
         child: Text(
           label,
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : Theme.of(context).hintColor,
+            color: selected
+                ? Colors.white
+                : (theme.brightness == Brightness.dark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
           ),
         ),
       ),
@@ -265,8 +354,7 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Place Card — TIDAK pakai ListTile agar trailing tidak overflow
-// Tombol edit & delete disusun Column (vertikal) bukan Row
+// Place Card — Mengikuti layout PlaceCard user dengan tombol edit & delete vertikal
 // ─────────────────────────────────────────────────────────────────────────────
 class _PlaceCard extends StatelessWidget {
   const _PlaceCard({
@@ -287,110 +375,158 @@ class _PlaceCard extends StatelessWidget {
     final catColor = AppTheme.getCategoryColor(category.name);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      height: 135,
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFF1F5F9),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+      child: Row(
+        children: [
+          // Thumbnail
+          ClipRRect(
+            borderRadius: const BorderRadius.horizontal(
+              left: Radius.circular(20),
+            ),
+            child: SizedBox(
+              width: 120,
+              height: double.infinity,
               child: CachedNetworkImage(
                 imageUrl: place.photoUrl ?? '',
-                width: 64,
-                height: 64,
                 fit: BoxFit.cover,
                 placeholder: (_, __) => Container(
-                  width: 64,
-                  height: 64,
-                  color: theme.inputDecorationTheme.fillColor,
-                  child: Icon(Icons.place_rounded,
-                      size: 30, color: theme.hintColor),
+                  color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  child: Icon(Icons.place_rounded, size: 30, color: theme.hintColor),
                 ),
                 errorWidget: (_, __, ___) => Container(
-                  width: 64,
-                  height: 64,
-                  color: theme.inputDecorationTheme.fillColor,
-                  child: Icon(Icons.broken_image_rounded,
-                      size: 30, color: theme.hintColor),
+                  color: theme.brightness == Brightness.dark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  child: Icon(Icons.broken_image_rounded, size: 30, color: theme.hintColor),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+          ),
 
-            // Info — Expanded wajib agar tidak overflow ke kanan
-            Expanded(
+          // Info
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Nama
+                  // Category Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: catColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      category.name[0].toUpperCase() + category.name.substring(1),
+                      style: TextStyle(
+                        color: catColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Place Name
                   Text(
                     place.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
+                      color: theme.brightness == Brightness.dark ? Colors.white : const Color(0xFF0B132B),
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                   const SizedBox(height: 4),
 
-                  // Alamat
-                  Text(
-                    place.address ?? '-',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.hintColor,
-                      height: 1.4,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 6),
-
-                  // Category badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: catColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      category.name,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: catColor,
+                  // Rating & Hours
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${place.rating != null ? place.rating!.toStringAsFixed(1) : '-'}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF64748B),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                      const Text('•', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          place.openHour ?? 'Jam buka -',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: const Color(0xFF64748B),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Address
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, color: Color(0xFF9CA3AF), size: 13),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          place.address,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
+          ),
 
-            // Tombol edit & delete VERTIKAL — tidak overflow
-            // Row dua IconButton di trailing ListTile = penyebab overflow
-            Column(
-              mainAxisSize: MainAxisSize.min,
+          // Actions
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _ActionBtn(
                   icon: Icons.edit_rounded,
                   color: AppTheme.primary,
                   onTap: onEdit,
-                  tooltip: 'Edit',
+                  tooltip: 'Ubah',
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 _ActionBtn(
                   icon: Icons.delete_rounded,
                   color: AppTheme.danger,
@@ -399,8 +535,8 @@ class _PlaceCard extends StatelessWidget {
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -425,12 +561,12 @@ class _ActionBtn extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(8),
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, size: 18, color: color),
         ),
