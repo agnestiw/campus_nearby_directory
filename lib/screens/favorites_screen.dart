@@ -16,524 +16,408 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  final FavoritesService _favService = FavoritesService();
-  final PlaceService _placeService = PlaceService();
-  final CategoryService _categoryService = CategoryService();
+  final FavoritesService _favService   = FavoritesService();
+  final PlaceService     _placeService  = PlaceService();
+  final CategoryService  _categoryService = CategoryService();
 
+  // ── Search ───────────────────────────────────────────────────────────────
   String _searchQuery = '';
+  // FocusNode yang persisten — tidak ikut rebuild
+  final FocusNode           _searchFocus      = FocusNode();
   final TextEditingController _searchController = TextEditingController();
-  Map<int, String> _categoryMap = {};
-  List<PlaceModel> _allFavoritePlaces = [];
-  bool _dataLoaded = false;
+
+  // ── Data ─────────────────────────────────────────────────────────────────
+  Map<int, String>  _categoryMap       = {};
+  List<PlaceModel>  _allFavoritePlaces = [];
+  bool              _dataLoaded        = false;
 
   @override
   void initState() {
     super.initState();
+    _favService.loadFavorites();
     _loadInitialData();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
   Future<void> _loadInitialData() async {
     try {
-      // Load categories and all places at once
       final categories = await _categoryService.getCategories();
+      if (!mounted) return;
       setState(() {
         _categoryMap = {for (var c in categories) c.id: c.name};
+        _dataLoaded  = true;
       });
-      
-      // Mark as loaded so we don't reload
-      setState(() => _dataLoaded = true);
     } catch (e) {
       AppLogger.error('Error loading favorites data: $e');
     }
   }
 
   Future<List<PlaceModel>> _loadFavoritePlaces(Set<int> ids) async {
-    // If already loaded, return cached data filtered by current ids
     if (_dataLoaded && _allFavoritePlaces.isNotEmpty) {
       return _allFavoritePlaces.where((p) => ids.contains(p.id)).toList();
     }
-
-    // Otherwise fetch from database
     final futures = ids.map((id) => _placeService.getPlaceById(id));
     final results = await Future.wait(futures);
-    final places = results.whereType<PlaceModel>().toList();
-    
-    // Cache for future use
+    final places  = results.whereType<PlaceModel>().toList();
     _allFavoritePlaces = places;
     return places;
   }
 
+  /// Filter by NAMA tempat ATAU nama KATEGORI
   List<PlaceModel> _getFilteredPlaces(List<PlaceModel> places) {
     if (_searchQuery.isEmpty) return places;
-    return places
-        .where((place) => place.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
+    final q = _searchQuery.toLowerCase();
+    return places.where((place) {
+      final nameMatch     = place.name.toLowerCase().contains(q);
+      final categoryName  = _categoryMap[place.categoryId] ?? '';
+      final catMatch      = categoryName.toLowerCase().contains(q);
+      return nameMatch || catMatch;
+    }).toList();
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFC),
-      body: ValueListenableBuilder<Set<int>>(
-        valueListenable: _favService.favorites,
-        builder: (context, favs, _) {
-          if (favs.isEmpty) {
-            return Stack(
-              children: [
-                // Background Abstract Shapes
-                Positioned(
-                  top: -60,
-                  left: -40,
-                  child: Container(
-                    width: 180,
-                    height: 180,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE8EEFD),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+      // GestureDetector agar tap di luar search bar menutup keyboard
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          children: [
+            // ── Background shapes ─────────────────────────────────────
+            Positioned(
+              top: -60,
+              left: -40,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8EEFD),
+                  shape: BoxShape.circle,
                 ),
-                Positioned(
-                  top: 50,
-                  right: 0,
-                  child: CustomPaint(
-                    size: const Size(120, 150),
-                    painter: CurvePainter(),
-                  ),
-                ),
-                // Empty State Content
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 20),
-                        
-                        // Header
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Favorit',
-                              style: GoogleFonts.poppins(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0B132B),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Simpan tempat favorit untuk akses cepat',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: const Color(0xFF0B132B).withOpacity(0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 100),
-                        
-                        // Empty State Icon
-                        Center(
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFEE2E2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.favorite_rounded,
-                              size: 40,
-                              color: Color(0xFFEF4444),
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Empty State Text
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Belum ada favorit',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF0B132B),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Tap ❤ pada tempat yang kamu suka untuk menambah favorit.',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                  color: const Color(0xFF64748B),
-                                  height: 1.5,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
+              ),
+            ),
+            Positioned(
+              top: 50,
+              right: 0,
+              child: CustomPaint(
+                size: const Size(120, 150),
+                painter: CurvePainter(),
+              ),
+            ),
 
-          return FutureBuilder<List<PlaceModel>>(
-            future: _loadFavoritePlaces(favs),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final allPlaces = snapshot.data ?? [];
-              final places = _getFilteredPlaces(allPlaces);
-              
-              if (places.isEmpty && _searchQuery.isNotEmpty) {
-                return Stack(
+            // ── Main content ──────────────────────────────────────────
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Background Abstract Shapes
-                    Positioned(
-                      top: -60,
-                      left: -40,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE8EEFD),
-                          shape: BoxShape.circle,
-                        ),
+                    const SizedBox(height: 20),
+
+                    // Header
+                    Text(
+                      'Favorit',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0B132B),
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    Positioned(
-                      top: 50,
-                      right: 0,
-                      child: CustomPaint(
-                        size: const Size(120, 150),
-                        painter: CurvePainter(),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Simpan tempat favorit untuk akses cepat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF0B132B).withValues(alpha: 0.7),
                       ),
                     ),
-                    SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 20),
-                            
-                            // Header
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Favorit',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF0B132B),
-                                    letterSpacing: -0.5,
+
+                    const SizedBox(height: 28),
+
+                    // ── Search bar — SELALU di luar FutureBuilder ────
+                    ValueListenableBuilder<Set<int>>(
+                      valueListenable: _favService.favorites,
+                      builder: (_, favs, _) {
+                        // Sembunyikan search bar saat tidak ada favorit
+                        if (favs.isEmpty) return const SizedBox.shrink();
+                        return _buildSearchBar();
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ── List area ────────────────────────────────────
+                    Expanded(
+                      child: ValueListenableBuilder<Set<int>>(
+                        valueListenable: _favService.favorites,
+                        builder: (context, favs, _) {
+                          // Empty state
+                          if (favs.isEmpty) return _buildEmptyState();
+
+                          return FutureBuilder<List<PlaceModel>>(
+                            future: _loadFavoritePlaces(favs),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState != ConnectionState.done) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF1A6FDB),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Simpan tempat favorit untuk akses cepat',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                    color: const Color(0xFF0B132B).withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            
-                            const SizedBox(height: 32),
-                            
-                            // Search Bar
-                            Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.03),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: TextField(
-                                controller: _searchController,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _searchQuery = value;
-                                  });
-                                },
-                                decoration: InputDecoration(
-                                  hintText: 'Cari favorit...',
-                                  hintStyle: GoogleFonts.poppins(
-                                    color: const Color(0xFF9CA3AF),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  prefixIcon: const Padding(
-                                    padding: EdgeInsets.only(left: 20, right: 12),
-                                    child: Icon(Icons.search, color: Color(0xFF1A6FDB), size: 22),
-                                  ),
-                                  prefixIconConstraints: const BoxConstraints(minWidth: 50),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 80),
-                            
-                            // No Results
-                            Center(
-                              child: Column(
+                                );
+                              }
+
+                              final allPlaces = snapshot.data ?? [];
+                              final places    = _getFilteredPlaces(allPlaces);
+
+                              if (places.isEmpty) {
+                                return _buildNoResults();
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    Icons.search_off_rounded,
-                                    size: 48,
-                                    color: Color(0xFF9CA3AF),
+                                  // Count label
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Text(
+                                      '${places.length} favorit ditemukan',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        color: const Color(0xFF64748B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Tidak ada hasil',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF0B132B),
+
+                                  // List
+                                  Expanded(
+                                    child: RefreshIndicator(
+                                      color: const Color(0xFF1A6FDB),
+                                      onRefresh: () async {
+                                        _allFavoritePlaces = [];
+                                        setState(() {});
+                                      },
+                                      child: ListView.builder(
+                                        padding: const EdgeInsets.only(bottom: 100),
+                                        itemCount: places.length,
+                                        itemBuilder: (context, index) {
+                                          final place = places[index];
+                                          return PlaceCard(
+                                            place: place,
+                                            categoryName: _categoryMap[place.categoryId],
+                                            distanceText: null,
+                                            isFavorite: true,
+                                            onFavoriteToggle: () async {
+                                              await _favService.toggleFavorite(place.id);
+                                              _allFavoritePlaces = [];
+                                              setState(() {});
+                                            },
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                          ],
-                        ),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
                   ],
-                );
-              }
-              
-              return Stack(
-                children: [
-                  // Background Abstract Shapes
-                  Positioned(
-                    top: -60,
-                    left: -40,
-                    child: Container(
-                      width: 180,
-                      height: 180,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE8EEFD),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 50,
-                    right: 0,
-                    child: CustomPaint(
-                      size: const Size(120, 150),
-                      painter: CurvePainter(),
-                    ),
-                  ),
-                  
-                  // Main Content
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          
-                          // Header
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Favorit',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF0B132B),
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Simpan tempat favorit untuk akses cepat',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: const Color(0xFF0B132B).withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 32),
-                          
-                          // Search Bar
-                          Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                hintText: 'Cari favorit...',
-                                hintStyle: GoogleFonts.poppins(
-                                  color: const Color(0xFF9CA3AF),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                                prefixIcon: const Padding(
-                                  padding: EdgeInsets.only(left: 20, right: 12),
-                                  child: Icon(Icons.search, color: Color(0xFF1A6FDB), size: 22),
-                                ),
-                                prefixIconConstraints: const BoxConstraints(minWidth: 50),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 24),
-                          
-                          // Results Count
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              '${places.length} favorit',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: const Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          
-                          // List of Favorites
-                          Expanded(
-                            child: RefreshIndicator(
-                              onRefresh: () async { setState(() {}); },
-                              child: ListView.builder(
-                                padding: const EdgeInsets.only(bottom: 100),
-                                itemCount: places.length,
-                                itemBuilder: (context, index) {
-                                  final place = places[index];
-                                  return PlaceCard(
-                                    place: place,
-                                    categoryName: _categoryMap[place.categoryId],
-                                    distanceText: null,
-                                    isFavorite: true,
-                                    onFavoriteToggle: () async {
-                                      await _favService.toggleFavorite(place.id);
-                                      setState(() {});
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Widgets ───────────────────────────────────────────────────────────────
+
+  /// Search bar dengan FocusNode persisten agar tidak kehilangan fokus saat rebuild
+  Widget _buildSearchBar() {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller:  _searchController,
+        focusNode:   _searchFocus,        // ← FocusNode persisten
+        onChanged: (value) => setState(() => _searchQuery = value),
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: const Color(0xFF0B132B),
+        ),
+        decoration: InputDecoration(
+          hintText: 'Cari nama atau kategori...',
+          hintStyle: GoogleFonts.poppins(
+            color: const Color(0xFF9CA3AF),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: const Padding(
+            padding: EdgeInsets.only(left: 20, right: 12),
+            child: Icon(Icons.search_rounded, color: Color(0xFF1A6FDB), size: 22),
+          ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 50),
+          // Tombol clear saat ada teks
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded,
+                      color: Color(0xFF9CA3AF), size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: const BorderSide(color: Color(0xFF1A6FDB), width: 1.5),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEE2E2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.favorite_rounded,
+              size: 40,
+              color: Color(0xFFEF4444),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Belum ada favorit',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0B132B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap ❤ pada tempat yang kamu suka\nuntuk menambah favorit.',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF64748B),
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResults() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE8EEFD),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              size: 36,
+              color: Color(0xFF1A6FDB),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Tidak ada hasil untuk',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '"$_searchQuery"',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0B132B),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// ── Curve Painter (sama seperti categories_screen) ────────────────────────────
 class CurvePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    var paint = Paint()
-      ..color = const Color(0xFFD4FF59)
-      ..style = PaintingStyle.stroke
+    final paint = Paint()
+      ..color      = const Color(0xFFD4FF59)
+      ..style      = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
-    var path = Path();
-    
-    // Start with a small circle
-    canvas.drawCircle(const Offset(20, 20), 8, paint..style = PaintingStyle.fill);
-    
-    // Draw the curve
+    canvas.drawCircle(
+      const Offset(20, 20), 8,
+      paint..style = PaintingStyle.fill,
+    );
+
     paint.style = PaintingStyle.stroke;
-    path.moveTo(20, 20);
-    path.quadraticBezierTo(size.width * 0.7, 10, size.width, size.height);
-    
+    final path = Path()
+      ..moveTo(20, 20)
+      ..quadraticBezierTo(size.width * 0.7, 10, size.width, size.height);
+
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return false;
-  }
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

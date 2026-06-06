@@ -2,9 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../core/app_theme.dart';
 import '../models/place_model.dart';
 import '../services/location_service.dart';
 import '../services/routing_service.dart';
@@ -31,6 +31,14 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
   bool _isLoadingGps = true;
   bool _isLoadingRoute = false;
   String? _gpsError;
+
+  // ── Design tokens ─────────────────────────────────────────────────────
+  static const Color _primary    = Color(0xFF1A6FDB);
+  static const Color _accent     = Color(0xFFD4FF59);   // lime-yellow
+  static const Color _darkText   = Color(0xFF0B132B);
+  static const Color _subtitle   = Color(0xFF64748B);
+  static const Color _iconBg     = Color(0xFFE8EEFD);
+  static const Color _pageBg     = Color(0xFFFAFAFC);
 
   @override
   void initState() {
@@ -75,12 +83,19 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
       // Fit peta agar keduanya kelihatan
       final bounds = LatLngBounds.fromPoints([userLatLng, destLatLng]);
       _mapController.fitCamera(
-        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.fromLTRB(40, 100, 40, 280)),
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.fromLTRB(40, 100, 40, 320)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal mengambil rute. Pastikan internet aktif.'),
-            behavior: SnackBarBehavior.floating),
+        SnackBar(
+          content: Text(
+            'Gagal mengambil rute. Pastikan internet aktif.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: _darkText,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
     }
   }
@@ -133,45 +148,112 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
   @override
   Widget build(BuildContext context) {
     final dest = widget.destination;
-    final catColor = AppTheme.getCategoryColor('');
-    final catIcon = AppTheme.getCategoryIcon('');
 
     return Scaffold(
+      backgroundColor: _pageBg,
       appBar: AppBar(
-        title: Text(dest.name, overflow: TextOverflow.ellipsis),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        title: Text(
+          dest.name,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.poppins(
+            color: _darkText,
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _iconBg,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_back_rounded, color: _darkText, size: 18),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           if (_userLocation != null)
             IconButton(
-              icon: const Icon(Icons.my_location_rounded),
+              icon: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _iconBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.my_location_rounded, color: _primary, size: 18),
+              ),
               tooltip: 'Lokasi Saya',
               onPressed: () {
                 _mapController.move(_userLocation!, 16);
               },
             ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _iconBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.refresh_rounded, color: _primary, size: 18),
+            ),
             tooltip: 'Hitung ulang rute',
             onPressed: _initRoute,
           ),
+          const SizedBox(width: 4),
         ],
+        // Lime accent bottom strip on AppBar
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(3),
+          child: Container(
+            height: 3,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_accent, _primary],
+              ),
+            ),
+          ),
+        ),
       ),
-      body: _buildBody(dest, catColor, catIcon),
+      body: _buildBody(dest),
     );
   }
 
-  Widget _buildBody(PlaceModel dest, Color catColor, IconData catIcon) {
+  Widget _buildBody(PlaceModel dest) {
     if (_isLoadingGps) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Mendapatkan lokasi GPS...', style: TextStyle(color: Color(0xFF6B7280))),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _iconBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(_primary),
+                  strokeWidth: 2.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Mendapatkan lokasi GPS...',
+              style: GoogleFonts.poppins(
+                color: _subtitle,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       );
@@ -185,46 +267,67 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 80, height: 80,
+                width: 88,
+                height: 88,
                 decoration: const BoxDecoration(
                   color: Color(0xFFFEF3C7),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.location_off_rounded, size: 40, color: Color(0xFFF59E0B)),
+                child: const Icon(Icons.location_off_rounded, size: 44, color: Color(0xFFF59E0B)),
               ),
-              const SizedBox(height: 16),
-              const Text('GPS Tidak Tersedia',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E))),
+              const SizedBox(height: 20),
+              Text(
+                'GPS Tidak Tersedia',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: _darkText,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text(_gpsError!, textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF6B7280), height: 1.5)),
-              const SizedBox(height: 24),
+              Text(
+                _gpsError!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  color: _subtitle,
+                  fontSize: 13,
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: ElevatedButton.icon(
                   onPressed: _initRoute,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Coba Lagi'),
+                  icon: const Icon(Icons.refresh_rounded, size: 20),
+                  label: Text(
+                    'Coba Lagi',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A6FDB),
+                    backgroundColor: _primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: OutlinedButton.icon(
                   onPressed: _locationService.openLocationSettings,
-                  icon: const Icon(Icons.settings_rounded),
-                  label: const Text('Buka Pengaturan'),
+                  icon: const Icon(Icons.settings_rounded, size: 20),
+                  label: Text(
+                    'Buka Pengaturan',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A6FDB),
-                    side: const BorderSide(color: Color(0xFF1A6FDB)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: _primary,
+                    side: const BorderSide(color: _primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
               ),
@@ -239,102 +342,81 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
     return Stack(
       children: [
         // ── PETA ──────────────────────────────────────
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: _userLocation ?? destLatLng,
-            initialZoom: 15,
-          ),
-          children: [
-            // Tiles
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.campus_nearby_directory',
+        Positioned.fill(
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _userLocation ?? destLatLng,
+              initialZoom: 15,
             ),
-
-            // ── Polyline rute ────────────────────────
-            if (_route != null)
-              PolylineLayer(
-                polylines: [
-                  // Glow
-                  Polyline(
-                    points: _route!.points,
-                    strokeWidth: 12,
-                    color: const Color(0xFF1A6FDB).withOpacity(0.18),
-                  ),
-                  // Garis utama
-                  Polyline(
-                    points: _route!.points,
-                    strokeWidth: 5,
-                    color: const Color(0xFF1A6FDB),
-                    borderColor: Colors.white,
-                    borderStrokeWidth: 2,
-                  ),
-                ],
+            children: [
+              // Tiles
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.campus_nearby_directory',
               ),
 
-            // ── Marker tujuan ────────────────────────
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: destLatLng,
-                  width: 56, height: 62,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFEF4444).withOpacity(0.45),
-                              blurRadius: 12, offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.flag_rounded, color: Colors.white, size: 22),
-                      ),
-                      Container(width: 3, height: 10,
-                          decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(2))),
-                    ],
-                  ),
+              // ── Polyline rute ────────────────────────
+              if (_route != null)
+                PolylineLayer(
+                  polylines: [
+                    // Glow outer
+                    Polyline(
+                      points: _route!.points,
+                      strokeWidth: 14,
+                      color: _primary.withValues(alpha: 0.15),
+                    ),
+                    // Glow inner
+                    Polyline(
+                      points: _route!.points,
+                      strokeWidth: 8,
+                      color: _primary.withValues(alpha: 0.25),
+                    ),
+                    // Garis utama
+                    Polyline(
+                      points: _route!.points,
+                      strokeWidth: 5,
+                      color: _primary,
+                      borderColor: Colors.white,
+                      borderStrokeWidth: 2,
+                    ),
+                  ],
                 ),
-              ],
-            ),
 
-            // ── Marker user ──────────────────────────
-            if (_userLocation != null)
+              // ── Marker tujuan ────────────────────────
               MarkerLayer(
                 markers: [
                   Marker(
-                    point: _userLocation!,
-                    width: 60, height: 60,
-                    child: Stack(
-                      alignment: Alignment.center,
+                    point: destLatLng,
+                    width: 56, height: 68,
+                    child: Column(
                       children: [
                         Container(
-                          width: 60, height: 60,
+                          width: 48, height: 48,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1A6FDB).withOpacity(0.12),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [_accent, _primary],
+                            ),
                             shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _primary.withValues(alpha: 0.4),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
+                          child: const Icon(Icons.flag_rounded, color: Colors.white, size: 22),
                         ),
                         Container(
-                          width: 30, height: 30,
+                          width: 3,
+                          height: 12,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1A6FDB).withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Container(
-                          width: 16, height: 16,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A6FDB),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: [BoxShadow(color: const Color(0xFF1A6FDB).withOpacity(0.5), blurRadius: 8)],
+                            color: _primary,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ],
@@ -342,7 +424,52 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
                   ),
                 ],
               ),
-          ],
+
+              // ── Marker user ──────────────────────────
+              if (_userLocation != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _userLocation!,
+                      width: 60, height: 60,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 60, height: 60,
+                            decoration: BoxDecoration(
+                              color: _primary.withValues(alpha: 0.10),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Container(
+                            width: 30, height: 30,
+                            decoration: BoxDecoration(
+                              color: _primary.withValues(alpha: 0.18),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Container(
+                            width: 18, height: 18,
+                            decoration: BoxDecoration(
+                              color: _primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _primary.withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
 
         // ── Loading rute overlay ──────────────────────
@@ -355,15 +482,29 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12),
+                  ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(width: 14, height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1A6FDB))),
-                    SizedBox(width: 10),
-                    Text('Menghitung rute terbaik...', style: TextStyle(fontSize: 13, color: Color(0xFF1A6FDB))),
+                    const SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(_primary),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Menghitung rute terbaik...',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: _primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -387,7 +528,6 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
       dest.latitude, dest.longitude,
     );
 
-    // Jarak lurus (straight-line)
     final straightDist = DistanceHelper.calculateDistance(
       startLat: _userLocation!.latitude,
       startLng: _userLocation!.longitude,
@@ -398,46 +538,80 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Color(0x28000000), blurRadius: 20, offset: Offset(0, -4))],
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(color: Color(0x22000000), blurRadius: 24, offset: Offset(0, -6)),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // ── Drag handle ──────────────────────────────────
           const SizedBox(height: 10),
           Center(
             child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 16),
 
+          // ── Lime accent strip ─────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tujuan label
+
+                // ── Tujuan row ──────────────────────────────
                 Row(
                   children: [
+                    // White circle + border + ShaderMask icon
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFE4E4),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _iconBg, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.flag_rounded, color: Color(0xFFEF4444), size: 18),
+                      child: Center(child: _buildShaderIcon(Icons.flag_rounded)),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Tujuan', style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
-                          Text(dest.name,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)),
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          Text(
+                            'Tujuan',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: _subtitle,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dest.name,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: _darkText,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -445,15 +619,14 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
-                // Stats: jarak jalan + waktu + jarak lurus
+                // ── Stat boxes ──────────────────────────────
                 Row(
                   children: [
                     Expanded(
                       child: _buildStatBox(
                         icon: Icons.route_rounded,
-                        color: const Color(0xFF1A6FDB),
                         label: route.formattedDistance,
                         sublabel: 'Jarak jalan',
                       ),
@@ -462,7 +635,6 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
                     Expanded(
                       child: _buildStatBox(
                         icon: Icons.directions_walk_rounded,
-                        color: const Color(0xFF0F9E75),
                         label: route.formattedDuration,
                         sublabel: 'Estimasi',
                       ),
@@ -471,7 +643,6 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
                     Expanded(
                       child: _buildStatBox(
                         icon: Icons.straighten_rounded,
-                        color: const Color(0xFF8B5CF6),
                         label: DistanceHelper.formatDistance(straightDist),
                         sublabel: 'Jarak lurus',
                       ),
@@ -481,32 +652,50 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
 
                 const SizedBox(height: 12),
 
-                // Arah kompas
+                // ── Compass row ─────────────────────────────
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F5FF),
-                    borderRadius: BorderRadius.circular(12),
+                    color: _iconBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFD0DFFA), width: 1),
                   ),
                   child: Row(
                     children: [
+                      // Compass icon — white circle + ShaderMask (shared helper)
                       Container(
-                        width: 36, height: 36,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A6FDB).withOpacity(0.15),
+                          color: Colors.white,
                           shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFD0DFFA), width: 1),
                         ),
-                        child: Icon(_bearingToIcon(bearing), size: 20, color: const Color(0xFF1A6FDB)),
+                        child: Center(
+                          child: _buildShaderIcon(_bearingToIcon(bearing), size: 20),
+                        ),
                       ),
                       const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Menuju ${_bearingToLabel(bearing)} (${bearing.round()}°)',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E))),
-                          const Text('Ikuti garis biru di peta untuk navigasi',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Menuju ${_bearingToLabel(bearing)} (${bearing.round()}°)',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _darkText,
+                              ),
+                            ),
+                            Text(
+                              'Ikuti garis biru di peta untuk navigasi',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: _subtitle,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -523,26 +712,71 @@ class _MapRouteScreenState extends State<MapRouteScreen> {
 
   Widget _buildStatBox({
     required IconData icon,
-    required Color color,
     required String label,
     required String sublabel,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: _iconBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD0DFFA), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
-          Text(sublabel, style: const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF))),
+          // White circle + ShaderMask icon (same as place_detail_screen)
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFD0DFFA), width: 1),
+            ),
+            child: Center(child: _buildShaderIcon(icon, size: 18)),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: _primary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            sublabel,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: _subtitle,
+              height: 1.3,
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  /// Lime-to-blue two-tone shader icon — identical to place_detail_screen & categories_screen
+  Widget _buildShaderIcon(IconData icon, {double size = 22}) {
+    return ShaderMask(
+      shaderCallback: (Rect bounds) {
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _accent,   // lime (top-left portion)
+            _accent,
+            _primary,  // blue (rest)
+            _primary,
+          ],
+          stops: [0.0, 0.35, 0.35, 1.0],
+        ).createShader(bounds);
+      },
+      blendMode: BlendMode.srcIn,
+      child: Icon(icon, color: Colors.white, size: size),
     );
   }
 }

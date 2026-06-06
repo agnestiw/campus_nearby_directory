@@ -14,30 +14,33 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _formKey           = GlobalKey<FormState>();
+  final _emailController   = TextEditingController();
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
+  bool _isLoading       = false;
+
+  // ── Design tokens ────────────────────────────────────────────
+  static const _primary  = Color(0xFF1A6FDB);
+  static const _accent   = Color(0xFFD4FF59);
+  static const _dark     = Color(0xFF0B132B);
+  static const _iconBg   = Color(0xFFE8EEFD);
+  static const _subtitle = Color(0xFF64748B);
+  static const _border   = Color(0xFFE2E8F0);
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
-
     try {
       final response = await _authService.signIn(
-        email: _emailController.text.trim(),
+        email:    _emailController.text.trim(),
         password: _passwordController.text,
       );
-
       if (response.user != null) {
         final profile = await _authService.getUserProfile(response.user!.id);
-        
         if (!mounted) return;
-
         if (profile != null && profile.roleName == 'admin') {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
@@ -54,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(
           content: Text('Login gagal: Periksa email dan password Anda.',
               style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-          backgroundColor: const Color(0xFFE85D5D),
+          backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
@@ -73,271 +76,414 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryBlue = const Color(0xFF1E88E5);
-    final accentBlue = const Color(0xFF42A5F5);
-
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    const Color(0xFF0F172A),
-                    const Color(0xFF1E2937),
-                    const Color(0xFF334155),
-                  ]
-                : [
-                    const Color(0xFFE0F2FE),
-                    const Color(0xFFBAE6FD),
-                    Colors.white,
-                  ],
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // ── Abstract background shapes ──────────────────────
+          Positioned(
+            top: -80,
+            left: -60,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: const BoxDecoration(
+                color: _iconBg,
+                shape: BoxShape.circle,
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo + Title
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [primaryBlue, accentBlue],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryBlue.withOpacity(0.4),
-                          blurRadius: 30,
-                          spreadRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.school_rounded,
-                      size: 72,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+          Positioned(
+            top: 60,
+            right: -30,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                color: _accent.withValues(alpha: 0.35),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -60,
+            right: -40,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: const BoxDecoration(
+                color: _iconBg,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          // Curve accent top-right
+          Positioned(
+            top: 40,
+            right: 0,
+            child: CustomPaint(
+              size: const Size(120, 150),
+              painter: _AuthCurvePainter(),
+            ),
+          ),
 
-                  Text(
-                    'Selamat Datang Kembali',
-                    style: GoogleFonts.poppins(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF1E2937),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Masuk untuk melanjutkan perjalananmu',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: isDark ? Colors.white70 : Colors.black54,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+          // ── Main content ─────────────────────────────────────
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
 
-                  const SizedBox(height: 48),
-
-                  // Form Card
-                  Container(
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E2937) : Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Email Field
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            style: GoogleFonts.poppins(
-                              color: isDark ? Colors.white : Colors.black87,
+                    // ── Logo badge ──────────────────────────────
+                    Center(
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: _primary,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _primary.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: GoogleFonts.poppins(),
-                              prefixIcon: Icon(Icons.email_outlined,
-                                  color: isDark ? Colors.white70 : Colors.grey),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          ],
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(Icons.school_rounded,
+                                size: 40, color: Colors.white),
+                            Positioned(
+                              bottom: 6,
+                              right: 6,
+                              child: Container(
+                                width: 16,
+                                height: 16,
+                                decoration: const BoxDecoration(
+                                  color: _accent,
+                                  shape: BoxShape.circle,
                                 ),
                               ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: primaryBlue, width: 2),
-                              ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return 'Email tidak boleh kosong';
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                return 'Format email tidak valid';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
 
-                          // Password Field
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            style: GoogleFonts.poppins(
-                              color: isDark ? Colors.white : Colors.black87,
+                    const SizedBox(height: 32),
+
+                    // ── Heading ────────────────────────────────────
+                    Center(
+                      child: Text(
+                        'Login',
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: _dark,
+                          height: 1.1,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text(
+                        'Masuk untuk melanjutkan perjalananmu',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: _subtitle,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // ── Form card ───────────────────────────────
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: _border, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 24,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Email
+                            _buildField(
+                              controller: _emailController,
+                              label: 'Email',
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Email tidak boleh kosong';
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
+                                  return 'Format email tidak valid';
+                                }
+                                return null;
+                              },
                             ),
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              labelStyle: GoogleFonts.poppins(),
-                              prefixIcon: Icon(Icons.lock_outline_rounded,
-                                  color: isDark ? Colors.white70 : Colors.grey),
+
+                            const SizedBox(height: 16),
+
+                            // Password
+                            _buildField(
+                              controller: _passwordController,
+                              label: 'Password',
+                              icon: Icons.lock_outline_rounded,
+                              obscure: _obscurePassword,
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: isDark ? Colors.white70 : Colors.grey,
+                                  color: _subtitle,
+                                  size: 20,
                                 ),
-                                onPressed: () {
-                                  setState(() => _obscurePassword = !_obscurePassword);
-                                },
+                                onPressed: () =>
+                                    setState(() => _obscurePassword = !_obscurePassword),
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: isDark ? Colors.white24 : Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: primaryBlue, width: 2),
-                              ),
+                              validator: (v) => v == null || v.isEmpty
+                                  ? 'Password tidak boleh kosong'
+                                  : null,
                             ),
-                            validator: (value) =>
-                                value == null || value.isEmpty ? 'Password tidak boleh kosong' : null,
-                          ),
 
-                          const SizedBox(height: 12),
-
-                          // Forgot Password
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () {
-                                // TODO: Tambahkan halaman lupa password
-                              },
-                              child: Text(
-                                'Lupa Password?',
-                                style: GoogleFonts.poppins(
-                                  color: accentBlue,
-                                  fontWeight: FontWeight.w600,
+                            // Lupa password
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {},
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 4, horizontal: 0),
                                 ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Login Button
-                          SizedBox(
-                            height: 58,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryBlue,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 8,
-                                shadowColor: primaryBlue.withOpacity(0.5),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 26,
-                                      height: 26,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : Text(
-                                      'Masuk',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // Register
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Belum punya akun? ',
-                                style: GoogleFonts.poppins(
-                                  color: isDark ? Colors.white60 : Colors.grey.shade700,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                                  );
-                                },
                                 child: Text(
-                                  'Daftar',
+                                  'Lupa Password?',
                                   style: GoogleFonts.poppins(
-                                    color: accentBlue,
-                                    fontWeight: FontWeight.bold,
+                                    color: _primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            // Login button
+                            _buildPrimaryButton(
+                              label: 'Masuk',
+                              isLoading: _isLoading,
+                              onPressed: _handleLogin,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Register link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Belum punya akun? ',
+                                  style: GoogleFonts.poppins(
+                                    color: _subtitle,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const RegisterScreen()),
+                                  ),
+                                  child: Text(
+                                    'Daftar',
+                                    style: GoogleFonts.poppins(
+                                      color: _primary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Shared field builder ──────────────────────────────────────────────────
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscure = false,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscure,
+      style: GoogleFonts.poppins(fontSize: 14, color: _dark),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(color: _subtitle, fontSize: 14),
+        floatingLabelStyle: GoogleFonts.poppins(
+            color: _primary, fontSize: 13, fontWeight: FontWeight.w600),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: _iconBg, width: 1.5),
+            ),
+            child: Center(
+              child: ShaderMask(
+                shaderCallback: (Rect bounds) {
+                  return const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _accent, _accent,
+                      _primary, _primary,
+                    ],
+                    stops: [0.0, 0.35, 0.35, 1.0],
+                  ).createShader(bounds);
+                },
+                blendMode: BlendMode.srcIn,
+                child: Icon(icon, color: Colors.white, size: 18),
               ),
             ),
           ),
         ),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFF),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _border, width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: _primary, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFEF4444)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required String label,
+    required bool isLoading,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2.5),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: _accent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.arrow_forward_rounded,
+                        color: _dark, size: 16),
+                  ),
+                ],
+              ),
       ),
     );
   }
+}
+
+// ── Curve painter ─────────────────────────────────────────────────────────────
+class _AuthCurvePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFD4FF59)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    canvas.drawCircle(
+        const Offset(20, 20), 8, paint..style = PaintingStyle.fill);
+
+    paint.style = PaintingStyle.stroke;
+    final path = Path()
+      ..moveTo(20, 20)
+      ..quadraticBezierTo(size.width * 0.7, 10, size.width, size.height);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
